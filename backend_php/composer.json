@@ -1,0 +1,33 @@
+{
+    "name": "asha-services/backend",
+    "description": "Backend API for Asha Services Flutter App",
+    "type": "project",
+    "require": {
+        "php": ">=7.4",
+        "firebase/php-jwt": "^6.0",
+        "vlucas/phpdotenv": "^5.0"
+    },
+    "require-dev": {
+        "phpunit/phpunit": "^9.0"
+    },
+    "autoload": {
+        "psr-4": {
+            "AshaServices\\": "src/"
+        }
+    },
+    "autoload-dev": {
+        "psr-4": {
+            "AshaServices\\Tests\\": "tests/"
+        }
+    },
+    "scripts": {
+        "test": "phpunit",
+        "install-db": "php install.php"
+    },
+    "config": {
+        "optimize-autoloader": true,
+        "sort-packages": true
+    },
+    "minimum-stability": "stable",
+    "prefer-stable": true
+} 
