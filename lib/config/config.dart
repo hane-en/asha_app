@@ -158,8 +158,5 @@ class Config {
   static const bool enableOfflineMode = false;
   static const bool enableDataSync = true;
 
-  static bool _isValidPhone(String phone) {
-    final clean = convertArabicNumbers(phone).replaceAll(RegExp(r'[^0-9]'), '');
-    return RegExp(r'^(77|78|70|71|73)[0-9]{7}\$').hasMatch(clean);
-  }
+ 
 }
