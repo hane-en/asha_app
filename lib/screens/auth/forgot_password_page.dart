@@ -32,8 +32,9 @@ class _ForgotPasswordPageState extends State<ForgotPasswordPage> {
           success
               ? '✅ تم إرسال رابط/رمز الاسترجاع إلى بريدك أو هاتفك'
               : '❌ لم يتم العثور على الحساب',
+              style: TextStyle(color: Colors.black87),
         ),
-        backgroundColor: success ? Colors.green : Colors.red,
+        backgroundColor: success ? Color(0xFFE1BEE7) : const Color.fromARGB(255, 182, 105, 99),
       ),
     );
   }
@@ -46,13 +47,16 @@ class _ForgotPasswordPageState extends State<ForgotPasswordPage> {
         elevation: 0,
       ),
       body: Container(
-        decoration: const BoxDecoration(
-          gradient: LinearGradient(
-            begin: Alignment.topCenter,
-            end: Alignment.bottomCenter,
-            colors: [Colors.purple, Colors.purpleAccent],
-          ),
-        ),
+         decoration: BoxDecoration(
+              gradient: LinearGradient(
+                begin: Alignment.topCenter,
+                end: Alignment.bottomCenter,
+                colors: [
+                 Colors.deepPurple.shade100,
+                  Colors.deepPurple.shade200,
+                ],
+              ),
+            ),
         child: SafeArea(
           child: Center(
             child: SingleChildScrollView(
@@ -69,19 +73,19 @@ class _ForgotPasswordPageState extends State<ForgotPasswordPage> {
                     child: Column(
                       mainAxisSize: MainAxisSize.min,
                       children: [
-                        const Icon(
-                          Icons.lock_open,
-                          size: 80,
-                          color: Colors.purple,
-                        ),
+                       Icon(
+                            Icons.lock_open,
+                            size: 80,
+                            color: Colors.purple.shade300,
+                          ),
                         const SizedBox(height: 24),
                         const Text(
                           'استرجاع كلمة المرور',
-                          style: TextStyle(
-                            fontSize: 28,
-                            fontWeight: FontWeight.bold,
-                            color: Colors.purple,
-                          ),
+                           style: TextStyle(
+                              fontSize: 28,
+                              fontWeight: FontWeight.bold,
+                               color: Colors.black,
+                              ),
                         ),
                         const SizedBox(height: 8),
                         const Text(
@@ -118,8 +122,9 @@ class _ForgotPasswordPageState extends State<ForgotPasswordPage> {
                               : ElevatedButton(
                                   onPressed: sendRecovery,
                                   style: ElevatedButton.styleFrom(
-                                    backgroundColor: Colors.purple,
-                                    foregroundColor: Colors.white,
+                                  backgroundColor: Colors.deepPurple.shade200,
+                                      foregroundColor: Colors.white,
+                                       shadowColor: Colors.purple.shade100,
                                     shape: RoundedRectangleBorder(
                                       borderRadius: BorderRadius.circular(12),
                                     ),
@@ -127,9 +132,10 @@ class _ForgotPasswordPageState extends State<ForgotPasswordPage> {
                                   child: const Text(
                                     'إرسال رمز الاسترجاع',
                                     style: TextStyle(
-                                      fontSize: 16,
-                                      fontWeight: FontWeight.bold,
-                                    ),
+                                        fontSize: 18,
+                                         color: Colors.black,
+                                        fontWeight: FontWeight.bold,
+                                      ),
                                   ),
                                 ),
                         ),
