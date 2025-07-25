@@ -22,8 +22,10 @@ class _VerifyPageState extends State<VerifyPage> {
     if (isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
-          content: Text('❌ يجب ملء جميع الحقول'),
-          backgroundColor: Colors.red,
+          content: Text('❌ يجب ملء جميع الحقول',
+          style: TextStyle(color: Colors.black),
+          ),
+          backgroundColor: Color.fromARGB(255, 199, 147, 144),
         ),
       );
     } else {
@@ -36,8 +38,10 @@ class _VerifyPageState extends State<VerifyPage> {
         setState(() => isLoading = false);
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text('✅ تم التحقق من الكود: $fullCode'),
-            backgroundColor: Colors.green,
+            content: Text('✅ تم التحقق من الكود: $fullCode',
+            style: TextStyle(color: Colors.black),
+            ),
+            backgroundColor: const Color.fromARGB(255, 199, 151, 226),
           ),
         );
       });
@@ -76,13 +80,16 @@ class _VerifyPageState extends State<VerifyPage> {
           elevation: 0,
         ),
         body: Container(
-          decoration: const BoxDecoration(
-            gradient: LinearGradient(
-              begin: Alignment.topCenter,
-              end: Alignment.bottomCenter,
-              colors: [Color(0xFF8e24aa), Color(0xFFba68c8)],
-            ),
+         decoration: BoxDecoration(
+              gradient: LinearGradient(
+                begin: Alignment.topCenter,
+                end: Alignment.bottomCenter,
+                colors: [
+                 Colors.deepPurple.shade100,
+                  Colors.deepPurple.shade200,
+                ],
           ),
+        ),
           child: SafeArea(
             child: Center(
               child: SingleChildScrollView(
@@ -100,7 +107,7 @@ class _VerifyPageState extends State<VerifyPage> {
                         const Icon(
                           Icons.verified_user,
                           size: 80,
-                          color: Color(0xFFba68c8),
+                          color: Color.fromARGB(255, 187, 138, 209),
                         ),
                         const SizedBox(height: 24),
                         const Text(
@@ -108,7 +115,7 @@ class _VerifyPageState extends State<VerifyPage> {
                           style: TextStyle(
                             fontSize: 28,
                             fontWeight: FontWeight.bold,
-                            color: Color(0xFFba68c8),
+                            color: Color.fromARGB(255, 7, 7, 7),
                           ),
                         ),
                         const SizedBox(height: 8),
@@ -167,16 +174,19 @@ class _VerifyPageState extends State<VerifyPage> {
                               : ElevatedButton(
                                   onPressed: () => _verify(context),
                                   style: ElevatedButton.styleFrom(
-                                    backgroundColor: Colors.blue,
-                                    foregroundColor: Colors.white,
-                                    shape: RoundedRectangleBorder(
-                                      borderRadius: BorderRadius.circular(12),
-                                    ),
+                                      backgroundColor: Colors.deepPurple.shade200,
+                                      foregroundColor: Colors.white,
+                                      elevation: 2,
+                                      shadowColor: Colors.purple.shade100,
+                                      shape: RoundedRectangleBorder(
+                                        borderRadius: BorderRadius.circular(16),
+                                      ),
                                   ),
                                   child: const Text(
                                     'تحقق',
                                     style: TextStyle(
                                       fontSize: 16,
+                                      color: Colors.black,
                                       fontWeight: FontWeight.bold,
                                     ),
                                   ),

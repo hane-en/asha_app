@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import '../../services/auth_service.dart';
 import '../../utils/validators.dart';
-import '../provider/provider_home_page.dart';
+// import '../provider/provider_home_page.dart';
 import '../../routes/app_routes.dart';
 
 class ProviderLoginPage extends StatefulWidget {
@@ -42,8 +42,10 @@ class _ProviderLoginPageState extends State<ProviderLoginPage> {
       if (data['success'] && data['role'] == 'provider') {
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(
-            content: Text('✅ تم تسجيل الدخول كمزود خدمة بنجاح'),
-            backgroundColor: Color(0xFF8e24aa),
+            content: Text('✅ تم تسجيل الدخول كمزود خدمة بنجاح'
+            ,style: TextStyle(color: Colors.black),
+            ),
+            backgroundColor: Color.fromARGB(255, 219, 186, 228),
           ),
         );
         Navigator.pushNamedAndRemoveUntil(
@@ -54,8 +56,9 @@ class _ProviderLoginPageState extends State<ProviderLoginPage> {
       } else {
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(
-            content: Text('❌ فشل تسجيل الدخول أو ليس لديك حساب مزود خدمة'),
-            backgroundColor: Color(0xFF8e24aa),
+            content: Text('❌ فشل تسجيل الدخول أو ليس لديك حساب مزود خدمة'
+             ,style: TextStyle(color: Colors.black),),
+            backgroundColor:  Color.fromARGB(255, 224, 140, 134),
           ),
         );
       }
@@ -63,8 +66,8 @@ class _ProviderLoginPageState extends State<ProviderLoginPage> {
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          content: Text('❌ خطأ في الاتصال: ${e.toString()}'),
-          backgroundColor: const Color(0xFF8e24aa),
+          content: Text('❌ خطأ في الاتصال: ${e.toString()}', style: TextStyle(color: Colors.black),),
+          backgroundColor:  Color.fromARGB(255, 224, 140, 134),
         ),
       );
     } finally {
@@ -83,11 +86,14 @@ class _ProviderLoginPageState extends State<ProviderLoginPage> {
         elevation: 0,
       ),
       body: Container(
-        decoration: const BoxDecoration(
-          gradient: LinearGradient(
-            begin: Alignment.topCenter,
-            end: Alignment.bottomCenter,
-            colors: [Color(0xFF8e24aa), Color(0xFFba68c8)],
+        decoration: BoxDecoration(
+              gradient: LinearGradient(
+                begin: Alignment.topCenter,
+                end: Alignment.bottomCenter,
+                colors: [
+                 Colors.deepPurple.shade100,
+                  Colors.deepPurple.shade200,
+                ],
           ),
         ),
         child: SafeArea(
@@ -106,18 +112,18 @@ class _ProviderLoginPageState extends State<ProviderLoginPage> {
                     child: Column(
                       mainAxisSize: MainAxisSize.min,
                       children: [
-                        const Icon(
-                          Icons.business,
-                          size: 80,
-                          color: Color(0xFF8e24aa),
-                        ),
+                         Icon(
+                            Icons.business,
+                            size: 80,
+                            color: Colors.purple.shade300,
+                          ),
                         const SizedBox(height: 24),
                         const Text(
                           'تسجيل دخول مزود خدمة',
                           style: TextStyle(
                             fontSize: 28,
                             fontWeight: FontWeight.bold,
-                            color: Color(0xFF8e24aa),
+                            color: Color.fromARGB(255, 10, 10, 10),
                           ),
                         ),
                         const SizedBox(height: 8),
@@ -203,20 +209,23 @@ class _ProviderLoginPageState extends State<ProviderLoginPage> {
                               ? const Center(child: CircularProgressIndicator())
                               : ElevatedButton(
                                   onPressed: loginProvider,
-                                  style: ElevatedButton.styleFrom(
-                                    backgroundColor: Color(0xFF8e24aa),
-                                    foregroundColor: Colors.white,
-                                    shape: RoundedRectangleBorder(
-                                      borderRadius: BorderRadius.circular(12),
-                                    ),
+                                 style: ElevatedButton.styleFrom(
+                                      backgroundColor: Colors.deepPurple.shade200,
+                                      foregroundColor: Colors.white,
+                                      elevation: 2,
+                                      shadowColor: Colors.purple.shade100,
+                                      shape: RoundedRectangleBorder(
+                                        borderRadius: BorderRadius.circular(16),
+                                      ),
                                   ),
                                   child: const Text(
                                     'تسجيل الدخول',
                                     style: TextStyle(
-                                      fontSize: 16,
-                                      fontWeight: FontWeight.bold,
+                                        fontSize: 18,
+                                         color: Colors.black,
+                                        fontWeight: FontWeight.bold,
+                                      ),
                                     ),
-                                  ),
                                 ),
                         ),
                       ],

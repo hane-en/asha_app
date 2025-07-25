@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import '../../services/auth_service.dart';
 import '../../utils/validators.dart';
-import '../../utils/constants.dart';
+// import '../../utils/constants.dart';
 import '../../routes/app_routes.dart';
 import '../user/user_home_page.dart';
 import '../provider/provider_home_page.dart';
@@ -68,7 +68,8 @@ class _LoginPageState extends State<LoginPage> {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
             content: Text(msg),
-            backgroundColor: Colors.green,
+            
+            backgroundColor:Color.fromARGB(255, 199, 154, 207),
             behavior: SnackBarBehavior.floating,
           ),
         );
@@ -95,7 +96,7 @@ class _LoginPageState extends State<LoginPage> {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
             content: Text(errorMsg),
-            backgroundColor: Colors.red,
+            backgroundColor: const Color.fromARGB(255, 224, 140, 134),
             behavior: SnackBarBehavior.floating,
           ),
         );
@@ -105,7 +106,7 @@ class _LoginPageState extends State<LoginPage> {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
           content: Text('❌ خطأ في الاتصال: ${e.toString()}'),
-          backgroundColor: Colors.red,
+          backgroundColor: const Color.fromARGB(255, 224, 140, 134),
           behavior: SnackBarBehavior.floating,
         ),
       );
@@ -136,11 +137,15 @@ class _LoginPageState extends State<LoginPage> {
         elevation: 0,
       ),
       body: Container(
-        decoration: const BoxDecoration(
-          gradient: LinearGradient(
-            begin: Alignment.topCenter,
-            end: Alignment.bottomCenter,
-            colors: [Color(0xFF8e24aa), Color(0xFFba68c8)],
+          decoration: BoxDecoration(
+              gradient: LinearGradient(
+                begin: Alignment.topCenter,
+                end: Alignment.bottomCenter,
+                colors: [
+                 Colors.deepPurple.shade100,
+                  Colors.deepPurple.shade200,
+                ],
+
           ),
         ),
         child: SafeArea(
@@ -159,18 +164,18 @@ class _LoginPageState extends State<LoginPage> {
                     child: Column(
                       mainAxisSize: MainAxisSize.min,
                       children: [
-                        const Icon(
-                          Icons.account_circle,
-                          size: 80,
-                          color: Colors.purple,
-                        ),
+                        Icon(
+                            Icons.account_circle,
+                            size: 80,
+                            color: Colors.purple.shade300,
+                          ),
                         const SizedBox(height: 24),
                         const Text(
                           'مرحباً بك',
                           style: TextStyle(
                             fontSize: 28,
                             fontWeight: FontWeight.bold,
-                            color: Colors.purple,
+                            color: Color.fromARGB(255, 12, 11, 12),
                           ),
                         ),
                         const SizedBox(height: 8),
@@ -254,13 +259,14 @@ class _LoginPageState extends State<LoginPage> {
                           height: 50,
                           child: ElevatedButton(
                             onPressed: isLoading ? null : _login,
-                            style: ElevatedButton.styleFrom(
-                              backgroundColor: Colors.purple,
-                              foregroundColor: Colors.white,
-                              shape: RoundedRectangleBorder(
-                                borderRadius: BorderRadius.circular(12),
-                              ),
-                              elevation: 2,
+                           style: ElevatedButton.styleFrom(
+                                      backgroundColor: Colors.deepPurple.shade200,
+                                      foregroundColor: Colors.white,
+                                      elevation: 2,
+                                      shadowColor: Colors.purple.shade100,
+                                      shape: RoundedRectangleBorder(
+                                        borderRadius: BorderRadius.circular(16),
+                                      ),
                             ),
                             child: isLoading
                                 ? const SizedBox(
@@ -277,6 +283,7 @@ class _LoginPageState extends State<LoginPage> {
                                     'تسجيل الدخول',
                                     style: TextStyle(
                                       fontSize: 16,
+                                      color: Colors.black,
                                       fontWeight: FontWeight.bold,
                                     ),
                                   ),
@@ -297,7 +304,7 @@ class _LoginPageState extends State<LoginPage> {
                               },
                               child: const Text(
                                 'نسيت كلمة المرور؟',
-                                style: TextStyle(color: Colors.purple),
+                                style: TextStyle(color: Color.fromARGB(255, 12, 11, 12)),
                               ),
                             ),
                             TextButton(
@@ -311,7 +318,7 @@ class _LoginPageState extends State<LoginPage> {
                               },
                               child: const Text(
                                 'إنشاء حساب جديد',
-                                style: TextStyle(color: Colors.purple),
+                                style: TextStyle(color: Color.fromARGB(255, 18, 18, 19)),
                               ),
                             ),
                           ],

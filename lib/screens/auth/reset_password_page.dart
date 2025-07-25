@@ -42,8 +42,10 @@ class _ResetPasswordPageState extends State<ResetPasswordPage> {
       if (success) {
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(
-            content: Text('✅ تم تعيين كلمة المرور بنجاح'),
-            backgroundColor: Colors.green,
+            content: Text('✅ تم تعيين كلمة المرور بنجاح',
+            style: TextStyle(color: Colors.black),
+            ),
+            backgroundColor: Color.fromARGB(255, 186, 138, 192),
           ),
         );
         Navigator.pushAndRemoveUntil(
@@ -54,8 +56,10 @@ class _ResetPasswordPageState extends State<ResetPasswordPage> {
       } else {
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(
-            content: Text('❌ فشل في تعيين كلمة المرور'),
-            backgroundColor: Colors.red,
+            content: Text('❌ فشل في تعيين كلمة المرور',
+            style: TextStyle(color: Colors.black),
+            ),
+            backgroundColor: Color.fromARGB(255, 207, 154, 150),
           ),
         );
       }
@@ -63,8 +67,10 @@ class _ResetPasswordPageState extends State<ResetPasswordPage> {
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          content: Text('❌ خطأ في الاتصال: ${e.toString()}'),
-          backgroundColor: Colors.red,
+          content: Text('❌ خطأ في الاتصال: ${e.toString()}',
+          style: TextStyle(color: Colors.black),
+          ),
+          backgroundColor: const Color.fromARGB(255, 211, 154, 150),
         ),
       );
     } finally {
@@ -83,13 +89,16 @@ class _ResetPasswordPageState extends State<ResetPasswordPage> {
           elevation: 0,
         ),
         body: Container(
-          decoration: const BoxDecoration(
-            gradient: LinearGradient(
-              begin: Alignment.topCenter,
-              end: Alignment.bottomCenter,
-              colors: [Colors.orange, Colors.orangeAccent],
-            ),
+         decoration: BoxDecoration(
+              gradient: LinearGradient(
+                begin: Alignment.topCenter,
+                end: Alignment.bottomCenter,
+                colors: [
+                 Colors.deepPurple.shade100,
+                  Colors.deepPurple.shade200,
+                ],
           ),
+        ),
           child: SafeArea(
             child: Center(
               child: SingleChildScrollView(
@@ -109,7 +118,7 @@ class _ResetPasswordPageState extends State<ResetPasswordPage> {
                           const Icon(
                             Icons.lock_reset,
                             size: 80,
-                            color: Colors.orange,
+                            color: Color.fromARGB(255, 201, 151, 224),
                           ),
                           const SizedBox(height: 24),
                           const Text(
@@ -117,7 +126,7 @@ class _ResetPasswordPageState extends State<ResetPasswordPage> {
                             style: TextStyle(
                               fontSize: 28,
                               fontWeight: FontWeight.bold,
-                              color: Colors.orange,
+                            color: Color.fromARGB(255, 201, 151, 224),
                             ),
                           ),
                           const SizedBox(height: 8),
@@ -207,17 +216,20 @@ class _ResetPasswordPageState extends State<ResetPasswordPage> {
                                   )
                                 : ElevatedButton(
                                     onPressed: resetPassword,
-                                    style: ElevatedButton.styleFrom(
-                                      backgroundColor: Colors.orange,
+                                    style:ElevatedButton.styleFrom(
+                                      backgroundColor: Colors.deepPurple.shade200,
                                       foregroundColor: Colors.white,
+                                    
+                                      shadowColor: Colors.purple.shade100,
                                       shape: RoundedRectangleBorder(
-                                        borderRadius: BorderRadius.circular(12),
+                                        borderRadius: BorderRadius.circular(16),
                                       ),
                                     ),
                                     child: const Text(
                                       'تحديث كلمة المرور',
                                       style: TextStyle(
                                         fontSize: 16,
+                                        color: Colors.black,
                                         fontWeight: FontWeight.bold,
                                       ),
                                     ),

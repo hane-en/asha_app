@@ -45,16 +45,20 @@ class _ProviderRegisterPageState extends State<ProviderRegisterPage> {
     if (success) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
-          content: Text('✅ تم إرسال طلب التسجيل للمراجعة'),
-          backgroundColor: Colors.green,
+          content: Text('✅ تم إرسال طلب التسجيل للمراجعة',
+          style: TextStyle(color: Colors.black),
+          ),
+          backgroundColor: Color.fromARGB(255, 200, 149, 212),
         ),
       );
       Navigator.pop(context);
     } else {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
-          content: Text('❌ فشل التسجيل'),
-          backgroundColor: Colors.red,
+          content: Text('❌ فشل التسجيل',
+          style: TextStyle(color: Colors.black),
+          ),
+          backgroundColor: Color.fromARGB(255, 201, 138, 134),
         ),
       );
     }
@@ -69,13 +73,16 @@ class _ProviderRegisterPageState extends State<ProviderRegisterPage> {
           elevation: 0,
         ),
         body: Container(
-          decoration: const BoxDecoration(
-            gradient: LinearGradient(
-              begin: Alignment.topCenter,
-              end: Alignment.bottomCenter,
-              colors: [Colors.green, Colors.greenAccent],
-            ),
+           decoration: BoxDecoration(
+              gradient: LinearGradient(
+                begin: Alignment.topCenter,
+                end: Alignment.bottomCenter,
+                colors: [
+                 Colors.deepPurple.shade100,
+                  Colors.deepPurple.shade200,
+                ],
           ),
+        ),
           child: SafeArea(
             child: Center(
               child: SingleChildScrollView(
@@ -95,7 +102,7 @@ class _ProviderRegisterPageState extends State<ProviderRegisterPage> {
                           const Icon(
                             Icons.business,
                             size: 80,
-                            color: Colors.green,
+                            color: Color.fromARGB(255, 187, 153, 209),
                           ),
                           const SizedBox(height: 24),
                           const Text(
@@ -103,7 +110,7 @@ class _ProviderRegisterPageState extends State<ProviderRegisterPage> {
                             style: TextStyle(
                               fontSize: 28,
                               fontWeight: FontWeight.bold,
-                              color: Colors.green,
+                              color: Colors.black,
                             ),
                           ),
                           const SizedBox(height: 8),
@@ -238,16 +245,19 @@ class _ProviderRegisterPageState extends State<ProviderRegisterPage> {
                                 : ElevatedButton(
                                     onPressed: registerProvider,
                                     style: ElevatedButton.styleFrom(
-                                      backgroundColor: Colors.green,
+                                      backgroundColor: Colors.deepPurple.shade200,
                                       foregroundColor: Colors.white,
+                                      
+                                      shadowColor: Colors.purple.shade100,
                                       shape: RoundedRectangleBorder(
-                                        borderRadius: BorderRadius.circular(12),
+                                        borderRadius: BorderRadius.circular(16),
                                       ),
                                     ),
                                     child: const Text(
                                       'تسجيل',
                                       style: TextStyle(
                                         fontSize: 16,
+                                        color: Colors.black,
                                         fontWeight: FontWeight.bold,
                                       ),
                                     ),

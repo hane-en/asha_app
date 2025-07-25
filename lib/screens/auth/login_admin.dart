@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import '../../services/auth_service.dart';
-import '../admin/admin_dashboard.dart';
+// import '../admin/admin_dashboard.dart';
 import '../../routes/app_routes.dart';
 import '../../utils/validators.dart';
 import 'package:http/http.dart' as http;
@@ -85,13 +85,16 @@ class _AdminLoginPageState extends State<AdminLoginPage> {
         elevation: 0,
       ),
       body: Container(
-        decoration: const BoxDecoration(
-          gradient: LinearGradient(
-            begin: Alignment.topCenter,
-            end: Alignment.bottomCenter,
-            colors: [Color(0xFF8e24aa), Color(0xFFba68c8)],
-          ),
-        ),
+          decoration: BoxDecoration(
+              gradient: LinearGradient(
+                begin: Alignment.topCenter,
+                end: Alignment.bottomCenter,
+                colors: [
+                 Colors.deepPurple.shade100,
+                  Colors.deepPurple.shade200,
+                ],
+              ),
+            ),
         child: SafeArea(
           child: Center(
             child: SingleChildScrollView(
@@ -108,20 +111,20 @@ class _AdminLoginPageState extends State<AdminLoginPage> {
                     child: Column(
                       mainAxisSize: MainAxisSize.min,
                       children: [
-                        const Icon(
-                          Icons.admin_panel_settings,
-                          size: 80,
-                          color: Color(0xFF8e24aa),
-                        ),
+                         Icon(
+                            Icons.admin_panel_settings,
+                            size: 80,
+                            color: Colors.purple.shade300,
+                          ),
                         const SizedBox(height: 24),
                         const Text(
-                          'تسجيل دخول المشرف',
-                          style: TextStyle(
-                            fontSize: 28,
-                            fontWeight: FontWeight.bold,
-                            color: Color(0xFF8e24aa),
+                            'تسجيل دخول المشرف',
+                            style: TextStyle(
+                              fontSize: 28,
+                              fontWeight: FontWeight.bold,
+                              color: Colors.black,
+                              ),
                           ),
-                        ),
                         const SizedBox(height: 8),
                         const Text(
                           'أدخل بيانات المسؤول للوصول إلى لوحة التحكم',
@@ -203,22 +206,25 @@ class _AdminLoginPageState extends State<AdminLoginPage> {
                           height: 50,
                           child: isLoading
                               ? const Center(child: CircularProgressIndicator())
-                              : ElevatedButton(
-                                  onPressed: loginAdmin,
-                                  style: ElevatedButton.styleFrom(
-                                    backgroundColor: Color(0xFF8e24aa),
-                                    foregroundColor: Colors.white,
-                                    shape: RoundedRectangleBorder(
-                                      borderRadius: BorderRadius.circular(12),
+                               : ElevatedButton(
+                                    onPressed: loginAdmin,
+                                    style: ElevatedButton.styleFrom(
+                                      backgroundColor: Colors.deepPurple.shade200,
+                                      foregroundColor: Colors.white,
+                                      elevation: 2,
+                                      shadowColor: Colors.purple.shade100,
+                                      shape: RoundedRectangleBorder(
+                                        borderRadius: BorderRadius.circular(16),
+                                      ),
                                     ),
-                                  ),
                                   child: const Text(
-                                    'تسجيل الدخول',
-                                    style: TextStyle(
-                                      fontSize: 16,
-                                      fontWeight: FontWeight.bold,
+                                      'تسجيل الدخول',
+                                      style: TextStyle(
+                                        fontSize: 18,
+                                         color: Colors.black,
+                                        fontWeight: FontWeight.bold,
+                                      ),
                                     ),
-                                  ),
                                 ),
                         ),
                       ],

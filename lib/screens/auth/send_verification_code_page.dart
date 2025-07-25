@@ -36,8 +36,10 @@ class _SendVerificationCodePageState extends State<SendVerificationCodePage> {
       if (success) {
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(
-            content: Text('✅ تم إرسال الرمز بنجاح'),
-            backgroundColor: Colors.green,
+            content: Text('✅ تم إرسال الرمز بنجاح',
+            style: TextStyle(color: Colors.black),
+            ),
+            backgroundColor: Color.fromARGB(255, 195, 161, 223),
           ),
         );
         Navigator.push(
@@ -50,8 +52,10 @@ class _SendVerificationCodePageState extends State<SendVerificationCodePage> {
       } else {
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(
-            content: Text('❌ فشل إرسال الرمز'),
-            backgroundColor: Colors.red,
+            content: Text('❌ فشل إرسال الرمز',
+            style: TextStyle(color: Colors.black),
+            ),
+            backgroundColor: Color.fromARGB(255, 204, 151, 147),
           ),
         );
       }
@@ -59,8 +63,10 @@ class _SendVerificationCodePageState extends State<SendVerificationCodePage> {
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          content: Text('❌ خطأ في الاتصال: ${e.toString()}'),
-          backgroundColor: Colors.red,
+          content: Text('❌ خطأ في الاتصال: ${e.toString()}',
+          style: TextStyle(color: Colors.black),
+          ),
+          backgroundColor: const Color.fromARGB(255, 199, 148, 144),
         ),
       );
     } finally {
@@ -79,13 +85,16 @@ class _SendVerificationCodePageState extends State<SendVerificationCodePage> {
           elevation: 0,
         ),
         body: Container(
-          decoration: const BoxDecoration(
-            gradient: LinearGradient(
-              begin: Alignment.topCenter,
-              end: Alignment.bottomCenter,
-              colors: [Colors.blue, Colors.lightBlueAccent],
-            ),
+           decoration: BoxDecoration(
+              gradient: LinearGradient(
+                begin: Alignment.topCenter,
+                end: Alignment.bottomCenter,
+                colors: [
+                 Colors.deepPurple.shade100,
+                  Colors.deepPurple.shade200,
+                ],
           ),
+        ),
           child: SafeArea(
             child: Center(
               child: SingleChildScrollView(
@@ -105,7 +114,7 @@ class _SendVerificationCodePageState extends State<SendVerificationCodePage> {
                           const Icon(
                             Icons.sms_outlined,
                             size: 80,
-                            color: Colors.blue,
+                            color: Color.fromARGB(255, 203, 153, 223),
                           ),
                           const SizedBox(height: 24),
                           const Text(
@@ -113,7 +122,7 @@ class _SendVerificationCodePageState extends State<SendVerificationCodePage> {
                             style: TextStyle(
                               fontSize: 28,
                               fontWeight: FontWeight.bold,
-                              color: Colors.blue,
+                              color: Colors.black,
                             ),
                           ),
                           const SizedBox(height: 8),
@@ -158,17 +167,20 @@ class _SendVerificationCodePageState extends State<SendVerificationCodePage> {
                                   )
                                 : ElevatedButton(
                                     onPressed: sendCode,
-                                    style: ElevatedButton.styleFrom(
-                                      backgroundColor: Colors.blue,
+                                    style:ElevatedButton.styleFrom(
+                                      backgroundColor: Colors.deepPurple.shade200,
                                       foregroundColor: Colors.white,
+                                      
+                                      shadowColor: Colors.purple.shade100,
                                       shape: RoundedRectangleBorder(
-                                        borderRadius: BorderRadius.circular(12),
+                                        borderRadius: BorderRadius.circular(16),
                                       ),
                                     ),
                                     child: const Text(
                                       'إرسال الرمز عبر SMS',
                                       style: TextStyle(
                                         fontSize: 16,
+                                        color: Colors.black,
                                         fontWeight: FontWeight.bold,
                                       ),
                                     ),
