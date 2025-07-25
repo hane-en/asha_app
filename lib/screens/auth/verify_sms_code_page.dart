@@ -54,8 +54,9 @@ class _VerifySmsCodePageState extends State<VerifySmsCodePage> {
     if (code.length != 6) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
-          content: Text('يرجى إدخال رمز مكوّن من 6 أرقام'),
-          backgroundColor: Colors.red,
+          content: Text('يرجى إدخال رمز مكوّن من 6 أرقام',
+          style: TextStyle(color: Colors.black),),
+          backgroundColor: Color.fromARGB(255, 201, 151, 148),
         ),
       );
       return;
@@ -71,8 +72,9 @@ class _VerifySmsCodePageState extends State<VerifySmsCodePage> {
       if (success) {
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(
-            content: Text('✅ تم التحقق بنجاح'),
-            backgroundColor: Colors.green,
+            content: Text('✅ تم التحقق بنجاح',
+            style: TextStyle(color: Colors.black),),
+            backgroundColor: Color.fromARGB(255, 178, 152, 207),
           ),
         );
         Navigator.pushReplacement(
@@ -84,8 +86,10 @@ class _VerifySmsCodePageState extends State<VerifySmsCodePage> {
       } else {
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(
-            content: Text('❌ رمز التحقق غير صحيح'),
-            backgroundColor: Colors.red,
+            content: Text('❌ رمز التحقق غير صحيح',
+            style: TextStyle(color: Colors.black),
+            ),
+            backgroundColor: Color.fromARGB(255, 202, 151, 148),
           ),
         );
       }
@@ -93,8 +97,10 @@ class _VerifySmsCodePageState extends State<VerifySmsCodePage> {
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          content: Text('❌ خطأ في الاتصال: ${e.toString()}'),
-          backgroundColor: Colors.red,
+          content: Text('❌ خطأ في الاتصال: ${e.toString()}',
+          style: TextStyle(color: Colors.black),
+          ),
+          backgroundColor: const Color.fromARGB(255, 199, 155, 152),
         ),
       );
     } finally {
@@ -114,16 +120,20 @@ class _VerifySmsCodePageState extends State<VerifySmsCodePage> {
 
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          content: Text(success ? '✅ تم إرسال رمز جديد' : '❌ فشل إرسال الرمز'),
-          backgroundColor: success ? Colors.green : Colors.red,
+          content: Text(success ? '✅ تم إرسال رمز جديد' : '❌ فشل إرسال الرمز',
+          style: TextStyle(color: Colors.black),
+          ),
+          backgroundColor: success ? const Color.fromARGB(255, 195, 150, 212) : const Color.fromARGB(255, 194, 144, 140),
         ),
       );
     } catch (e) {
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          content: Text('❌ خطأ في الاتصال: ${e.toString()}'),
-          backgroundColor: Colors.red,
+          content: Text('❌ خطأ في الاتصال: ${e.toString()}',
+          style: TextStyle(color: Colors.black),
+          ),
+          backgroundColor: const Color.fromARGB(255, 190, 144, 140),
         ),
       );
     }
@@ -138,13 +148,16 @@ class _VerifySmsCodePageState extends State<VerifySmsCodePage> {
           elevation: 0,
         ),
         body: Container(
-          decoration: const BoxDecoration(
-            gradient: LinearGradient(
-              begin: Alignment.topCenter,
-              end: Alignment.bottomCenter,
-              colors: [Colors.blue, Colors.lightBlueAccent],
-            ),
+           decoration: BoxDecoration(
+              gradient: LinearGradient(
+                begin: Alignment.topCenter,
+                end: Alignment.bottomCenter,
+                colors: [
+                 Colors.deepPurple.shade100,
+                  Colors.deepPurple.shade200,
+                ],
           ),
+        ),
           child: SafeArea(
             child: Center(
               child: SingleChildScrollView(
@@ -159,14 +172,14 @@ class _VerifySmsCodePageState extends State<VerifySmsCodePage> {
                     child: Column(
                       mainAxisSize: MainAxisSize.min,
                       children: [
-                        const Icon(Icons.sms, size: 80, color: Colors.blue),
+                        const Icon(Icons.sms, size: 80, color: Color.fromARGB(255, 181, 152, 214)),
                         const SizedBox(height: 24),
                         const Text(
                           'تحقق من الرمز',
                           style: TextStyle(
                             fontSize: 28,
                             fontWeight: FontWeight.bold,
-                            color: Colors.blue,
+                            color: Colors.black,
                           ),
                         ),
                         const SizedBox(height: 8),
@@ -218,18 +231,21 @@ class _VerifySmsCodePageState extends State<VerifySmsCodePage> {
                               ? const Center(child: CircularProgressIndicator())
                               : ElevatedButton(
                                   onPressed: verifyCode,
-                                  style: ElevatedButton.styleFrom(
-                                    backgroundColor: Colors.blue,
-                                    foregroundColor: Colors.white,
-                                    shape: RoundedRectangleBorder(
-                                      borderRadius: BorderRadius.circular(12),
-                                    ),
+                                  style:ElevatedButton.styleFrom(
+                                      backgroundColor: Colors.deepPurple.shade200,
+                                      foregroundColor: Colors.white,
+                                    
+                                      shadowColor: Colors.purple.shade100,
+                                      shape: RoundedRectangleBorder(
+                                        borderRadius: BorderRadius.circular(16),
+                                      ),
                                   ),
                                   child: const Text(
                                     'تحقق',
                                     style: TextStyle(
                                       fontSize: 16,
                                       fontWeight: FontWeight.bold,
+                                      color: Colors.black,
                                     ),
                                   ),
                                 ),
@@ -241,7 +257,7 @@ class _VerifySmsCodePageState extends State<VerifySmsCodePage> {
                                 onPressed: resendCode,
                                 child: const Text(
                                   'إعادة إرسال الرمز',
-                                  style: TextStyle(color: Colors.blue),
+                                  style: TextStyle(color: Colors.black),
                                 ),
                               )
                             : Text(
