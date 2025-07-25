@@ -2,9 +2,9 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import '../../services/auth_service.dart';
 import '../../utils/validators.dart';
-import '../../utils/constants.dart';
-import '../user/user_home_page.dart';
-import '../provider/provider_pending_page.dart';
+// import '../../utils/constants.dart';
+// import '../user/user_home_page.dart';
+// import '../provider/provider_pending_page.dart';
 import '../../routes/app_routes.dart';
 
 class SignupPage extends StatefulWidget {
@@ -40,7 +40,8 @@ class _SignupPageState extends State<SignupPage> {
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
         content: Text(msg),
-        backgroundColor: isError ? Colors.red : Colors.green,
+        backgroundColor: isError ?  Color.fromARGB(255, 224, 140, 134) :Colors.deepPurple.shade200,
+                                     
         behavior: SnackBarBehavior.floating,
       ),
     );
@@ -90,13 +91,17 @@ class _SignupPageState extends State<SignupPage> {
           elevation: 0,
         ),
         body: Container(
-          decoration: const BoxDecoration(
-            gradient: LinearGradient(
-              begin: Alignment.topCenter,
-              end: Alignment.bottomCenter,
-              colors: [Color(0xFF8e24aa), Color(0xFFba68c8)],
-            ),
+            decoration: BoxDecoration(
+              gradient: LinearGradient(
+                begin: Alignment.topCenter,
+                end: Alignment.bottomCenter,
+                colors: [
+                 Colors.deepPurple.shade100,
+                  Colors.deepPurple.shade200,
+                ],
+
           ),
+        ),
           child: SafeArea(
             child: SingleChildScrollView(
               padding: const EdgeInsets.all(24),
@@ -113,10 +118,11 @@ class _SignupPageState extends State<SignupPage> {
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         const Center(
-                          child: Icon(
+                          child: 
+                            Icon(
                             Icons.person_add,
                             size: 80,
-                            color: Colors.purple,
+                           color: Color.fromARGB(255, 208, 197, 228),
                           ),
                         ),
                         const SizedBox(height: 24),
@@ -126,7 +132,7 @@ class _SignupPageState extends State<SignupPage> {
                             style: TextStyle(
                               fontSize: 28,
                               fontWeight: FontWeight.bold,
-                              color: Colors.purple,
+                              color: Colors.black,
                             ),
                           ),
                         ),
@@ -289,7 +295,7 @@ class _SignupPageState extends State<SignupPage> {
                               value: 'user',
                               child: Row(
                                 children: [
-                                  Icon(Icons.person, color: Colors.purple),
+                                  Icon(Icons.person, color: Color.fromARGB(255, 169, 145, 173)),
                                   SizedBox(width: 8),
                                   Text('مستخدم عادي'),
                                 ],
@@ -299,7 +305,7 @@ class _SignupPageState extends State<SignupPage> {
                               value: 'provider',
                               child: Row(
                                 children: [
-                                  Icon(Icons.business, color: Colors.green),
+                                  Icon(Icons.business, color: Color.fromARGB(255, 169, 145, 173)),
                                   SizedBox(width: 8),
                                   Text('مزود خدمة'),
                                 ],
@@ -318,11 +324,13 @@ class _SignupPageState extends State<SignupPage> {
                           child: ElevatedButton(
                             onPressed: isLoading ? null : _signup,
                             style: ElevatedButton.styleFrom(
-                              backgroundColor: Colors.purple,
-                              foregroundColor: Colors.white,
-                              shape: RoundedRectangleBorder(
-                                borderRadius: BorderRadius.circular(12),
-                              ),
+                                      backgroundColor: Colors.deepPurple.shade200,
+                                      foregroundColor: Colors.white,
+                                     
+                                      shadowColor: Colors.purple.shade100,
+                                      shape: RoundedRectangleBorder(
+                                        borderRadius: BorderRadius.circular(16),
+                                      ),
                               elevation: 2,
                             ),
                             child: isLoading
@@ -340,6 +348,7 @@ class _SignupPageState extends State<SignupPage> {
                                     'إنشاء الحساب',
                                     style: TextStyle(
                                       fontSize: 16,
+                                      color: Colors.black,
                                       fontWeight: FontWeight.bold,
                                     ),
                                   ),
