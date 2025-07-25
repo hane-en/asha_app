@@ -94,7 +94,6 @@ class _ProviderLoginPageState extends State<ProviderLoginPage> {
                  Colors.deepPurple.shade100,
                   Colors.deepPurple.shade200,
                 ],
-
           ),
         ),
         child: SafeArea(
