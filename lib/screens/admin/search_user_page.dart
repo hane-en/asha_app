@@ -42,7 +42,13 @@ class _SearchUserPageState extends State<SearchUserPage> {
   @override
   Widget build(BuildContext context) => SafeArea(
     child: Scaffold(
-      appBar: AppBar(title: const Text('بحث عن مستخدم')),
+      appBar: AppBar(
+        title: const Text(
+          'بحث عن مستخدم',
+          style: TextStyle(color: Colors.white),
+        ),
+        backgroundColor: Colors.purple,
+      ),
       body: Padding(
         padding: const EdgeInsets.all(16),
         child: Column(
@@ -88,9 +94,15 @@ class _SearchUserPageState extends State<SearchUserPage> {
         ),
       ),
       bottomNavigationBar: BottomNavigationBar(
+        backgroundColor: Colors.white,
+        selectedItemColor: Colors.purple,
+        unselectedItemColor: Colors.grey,
         items: const [
           BottomNavigationBarItem(icon: Icon(Icons.home), label: 'الرئيسية'),
-          BottomNavigationBarItem(icon: Icon(Icons.settings), label: 'الإعدادات'),
+          BottomNavigationBarItem(
+            icon: Icon(Icons.settings),
+            label: 'الإعدادات',
+          ),
         ],
         currentIndex: 0,
         onTap: (index) {

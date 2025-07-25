@@ -18,8 +18,7 @@ class BookingModel {
     this.updatedAt,
   });
 
-  factory BookingModel.fromJson(Map<String, dynamic> json) {
-    return BookingModel(
+  factory BookingModel.fromJson(Map<String, dynamic> json) => BookingModel(
       id: json['id'] ?? 0,
       userId: json['user_id'] ?? 0,
       serviceId: json['service_id'] ?? 0,
@@ -40,7 +39,6 @@ class BookingModel {
           ? DateTime.tryParse(json['updated_at'])
           : null,
     );
-  }
   final int id;
   final int userId;
   final int serviceId;

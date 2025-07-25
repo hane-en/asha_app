@@ -18,7 +18,7 @@ class _ProviderAnalyticsPageState extends State<ProviderAnalyticsPage> {
         'label': 'الخدمات',
         'value': 12,
         'icon': Icons.design_services,
-        'color': Colors.blue,
+        'color':Colors.purple,
       },
       {
         'label': 'الحجوزات',
@@ -36,7 +36,7 @@ class _ProviderAnalyticsPageState extends State<ProviderAnalyticsPage> {
         'label': 'التقييمات',
         'value': 4.8,
         'icon': Icons.star,
-        'color': Colors.yellow[800],
+        'color': const Color.fromARGB(255, 112, 33, 224),
       },
     ];
     final bookings = [

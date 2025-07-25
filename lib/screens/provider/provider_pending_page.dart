@@ -7,8 +7,8 @@ class ProviderPendingPage extends StatelessWidget {
   Widget build(BuildContext context) => SafeArea(
     child: Scaffold(
       appBar: AppBar(
-        title: Text('مراجعة الحساب'),
-        foregroundColor: Colors.white,
+        title: Text('مراجعة الحساب',style: TextStyle(color: Colors.white)),
+        // foregroundColor: Colors.white,
         leading: IconButton(
           icon: const Icon(Icons.arrow_back),
           onPressed: () {
@@ -97,14 +97,14 @@ class ProviderPendingPage extends StatelessWidget {
                 style: TextStyle(
                   fontSize: 20,
                   fontWeight: FontWeight.bold,
-                  color: Colors.white,
+                 color: Color.fromARGB(255, 108, 108, 108),
                 ),
                 textAlign: TextAlign.center,
               ),
               SizedBox(height: 10),
               Text(
                 'جاري مراجعة حسابك من قبل المسؤول. سيتم إعلامك عند الموافقة.',
-                style: TextStyle(fontSize: 16, color: Colors.white),
+                style: TextStyle(fontSize: 16,color: Color.fromARGB(255, 108, 108, 108)),
                 textAlign: TextAlign.center,
               ),
               SizedBox(height: 30),

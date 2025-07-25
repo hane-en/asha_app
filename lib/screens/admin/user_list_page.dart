@@ -79,7 +79,10 @@ class _UserListPageState extends State<UserListPage> {
   Widget build(BuildContext context) => SafeArea(
     child: Scaffold(
       appBar: AppBar(
-        title: const Text('قائمة المستخدمين'),
+        title: const Text(
+          'قائمة المستخدمين',
+          style: TextStyle(color: Colors.white),
+        ),
         actions: [
           IconButton(
             icon: const Icon(Icons.refresh),
@@ -161,7 +164,10 @@ class _UserListPageState extends State<UserListPage> {
       bottomNavigationBar: BottomNavigationBar(
         items: const [
           BottomNavigationBarItem(icon: Icon(Icons.home), label: 'الرئيسية'),
-          BottomNavigationBarItem(icon: Icon(Icons.settings), label: 'الإعدادات'),
+          BottomNavigationBarItem(
+            icon: Icon(Icons.settings),
+            label: 'الإعدادات',
+          ),
         ],
         currentIndex: 0,
         onTap: (index) {

@@ -52,10 +52,10 @@ class AdminSettingsPage extends StatelessWidget {
               ),
             ),
             const SizedBox(height: 8),
-            Center(
+            const Center(
               child: Text(
                 'admin@email.com',
-                style: const TextStyle(color: Colors.grey),
+                style: TextStyle(color: Colors.grey),
               ),
             ),
             const Divider(height: 32),

@@ -1,3 +1,5 @@
+import '../utils/helpers.dart';
+
 class Config {
   // API Configuration
   static const String apiBaseUrl = 'http://localhost/backend_php/api';
@@ -159,7 +161,9 @@ class Config {
   static const bool enableDataSync = true;
 
   static bool _isValidPhone(String phone) {
-    final clean = convertArabicNumbers(phone).replaceAll(RegExp(r'[^0-9]'), '');
+    final clean = Helpers.convertArabicNumbers(
+      phone,
+    ).replaceAll(RegExp('[^0-9]'), '');
     return RegExp(r'^(77|78|70|71|73)[0-9]{7}\$').hasMatch(clean);
   }
 }

@@ -89,7 +89,10 @@ class _ManageCommentsState extends State<ManageComments> {
   Widget build(BuildContext context) => SafeArea(
     child: Scaffold(
       appBar: AppBar(
-        title: const Text('إدارة التعليقات'),
+        title: const Text(
+          'إدارة التعليقات',
+          style: TextStyle(color: Colors.white),
+        ),
         actions: [
           IconButton(
             icon: const Icon(Icons.refresh),
@@ -112,7 +115,7 @@ class _ManageCommentsState extends State<ManageComments> {
                     vertical: 4,
                   ),
                   child: ListTile(
-                    leading: const Icon(Icons.comment, color: Colors.blue),
+                    leading: const Icon(Icons.comment, color: Colors.purple),
                     title: Text(
                       c['content'] ?? '',
                       maxLines: 3,
@@ -140,7 +143,10 @@ class _ManageCommentsState extends State<ManageComments> {
       bottomNavigationBar: BottomNavigationBar(
         items: const [
           BottomNavigationBarItem(icon: Icon(Icons.home), label: 'الرئيسية'),
-          BottomNavigationBarItem(icon: Icon(Icons.settings), label: 'الإعدادات'),
+          BottomNavigationBarItem(
+            icon: Icon(Icons.settings),
+            label: 'الإعدادات',
+          ),
         ],
         currentIndex: 0,
         onTap: (index) {

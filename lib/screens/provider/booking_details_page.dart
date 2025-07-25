@@ -10,6 +10,7 @@ class BookingDetailsPage extends StatelessWidget {
       appBar: AppBar(
         title: const Text('تفاصيل الحجز'),
         foregroundColor: Colors.white,
+        backgroundColor: Colors.purple,
         leading: IconButton(
           icon: const Icon(Icons.arrow_back),
           onPressed: () {

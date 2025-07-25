@@ -92,7 +92,12 @@ class _JoinRequestsPageState extends State<JoinRequestsPage> {
   @override
   Widget build(BuildContext context) => SafeArea(
     child: Scaffold(
-      appBar: AppBar(title: const Text('طلبات الانضمام')),
+      appBar: AppBar(
+        title: const Text(
+          'طلبات الانضمام',
+          style: TextStyle(color: Colors.white),
+        ),
+      ),
       body: isLoading
           ? const Center(child: CircularProgressIndicator())
           : requests.isEmpty
@@ -136,9 +141,11 @@ class _JoinRequestsPageState extends State<JoinRequestsPage> {
       bottomNavigationBar: BottomNavigationBar(
         items: const [
           BottomNavigationBarItem(icon: Icon(Icons.home), label: 'الرئيسية'),
-          BottomNavigationBarItem(icon: Icon(Icons.settings), label: 'الإعدادات'),
+          BottomNavigationBarItem(
+            icon: Icon(Icons.settings),
+            label: 'الإعدادات',
+          ),
         ],
-        currentIndex: 0,
         onTap: (index) {
           if (index == 0) {
             Navigator.pushAndRemoveUntil(

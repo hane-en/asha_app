@@ -175,7 +175,7 @@ class UserModel {
 
   double get profileCompleteness {
     var completedFields = 0;
-    final totalFields = 5; // name, phone, email, address, profileImage
+    const totalFields = 5; // name, phone, email, address, profileImage
 
     if (name.isNotEmpty) completedFields++;
     if (phone.isNotEmpty) completedFields++;

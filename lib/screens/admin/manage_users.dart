@@ -78,7 +78,11 @@ class _ManageUsersPageState extends State<ManageUsersPage> {
   Widget build(BuildContext context) => SafeArea(
     child: Scaffold(
       appBar: AppBar(
-        title: const Text('إدارة المستخدمين'),
+        title: const Text(
+          'إدارة المستخدمين',
+          style: TextStyle(color: Colors.white),
+        ),
+        backgroundColor: Colors.purple,
         actions: [
           IconButton(
             icon: const Icon(Icons.refresh),
@@ -158,7 +162,10 @@ class _ManageUsersPageState extends State<ManageUsersPage> {
       bottomNavigationBar: BottomNavigationBar(
         items: const [
           BottomNavigationBarItem(icon: Icon(Icons.home), label: 'الرئيسية'),
-          BottomNavigationBarItem(icon: Icon(Icons.settings), label: 'الإعدادات'),
+          BottomNavigationBarItem(
+            icon: Icon(Icons.settings),
+            label: 'الإعدادات',
+          ),
         ],
         currentIndex: 0,
         onTap: (index) {

@@ -91,12 +91,15 @@ class _DeleteUserPageState extends State<DeleteUserPage> {
   Widget build(BuildContext context) => SafeArea(
     child: Scaffold(
       appBar: AppBar(
-        title: const Text('حذف المستخدم'),
-        backgroundColor: Colors.red,
+        title: const Text(
+          'حذف المستخدم',
+          style: TextStyle(color: Colors.white),
+        ),
+        backgroundColor:Colors.purple,
         foregroundColor: Colors.white,
         elevation: 0,
       ),
-      body: Container(
+      body: DecoratedBox(
         decoration: const BoxDecoration(
           gradient: LinearGradient(
             begin: Alignment.topCenter,
@@ -186,7 +189,7 @@ class _DeleteUserPageState extends State<DeleteUserPage> {
                           children: [
                             Row(
                               children: [
-                                const Icon(Icons.person, color: Colors.blue),
+                                const Icon(Icons.person, color: Colors.purple),
                                 const SizedBox(width: 8),
                                 Text(
                                   'اسم المستخدم:',
@@ -251,12 +254,10 @@ class _DeleteUserPageState extends State<DeleteUserPage> {
                           filled: true,
                           fillColor: Colors.grey[50],
                         ),
-                        items: _reasons.map((reason) {
-                          return DropdownMenuItem(
+                        items: _reasons.map((reason) => DropdownMenuItem(
                             value: reason,
                             child: Text(reason),
-                          );
-                        }).toList(),
+                          )).toList(),
                         onChanged: (value) {
                           setState(() {
                             _selectedReason = value ?? '';
@@ -364,9 +365,11 @@ class _DeleteUserPageState extends State<DeleteUserPage> {
       bottomNavigationBar: BottomNavigationBar(
         items: const [
           BottomNavigationBarItem(icon: Icon(Icons.home), label: 'الرئيسية'),
-          BottomNavigationBarItem(icon: Icon(Icons.settings), label: 'الإعدادات'),
+          BottomNavigationBarItem(
+            icon: Icon(Icons.settings),
+            label: 'الإعدادات',
+          ),
         ],
-        currentIndex: 0,
         onTap: (index) {
           if (index == 0) {
             Navigator.pushAndRemoveUntil(

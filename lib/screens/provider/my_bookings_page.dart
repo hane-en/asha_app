@@ -95,7 +95,12 @@ class _MyBookingsPageState extends State<MyBookingsPage> {
         ),
       ),
 
-      body: const Center(child: Text('قائمة الحجوزات الواردة')),
+      body: const Center(
+        child: Text(
+          'قائمة الحجوزات الواردة',
+          style: TextStyle(color: Color.fromARGB(255, 108, 108, 108)),
+        ),
+      ),
 
       bottomNavigationBar: BottomNavigationBar(
         currentIndex: currentIndex,

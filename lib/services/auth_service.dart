@@ -133,6 +133,7 @@ class AuthService {
     String phone,
     String password,
     String confirmPassword,
+    String role, // أضف هذا السطر
   ) async {
     try {
       // Input validation
@@ -160,6 +161,7 @@ class AuthService {
           'phone': phone,
           'password': password,
           'confirm_password': confirmPassword,
+          'role': role, // أضف هذا السطر
         }),
         isPost: true,
       );

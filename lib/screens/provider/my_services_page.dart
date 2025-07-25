@@ -99,7 +99,7 @@ class _MyServicesPageState extends State<MyServicesPage> {
       body: const Center(
         child: Text(
           'عرض الخدمات وإدارتها',
-          style: TextStyle(fontSize: 18, color: Colors.white),
+          style: TextStyle(fontSize: 18, color: Color.fromARGB(255, 108, 108, 108)),
         ),
       ),
 

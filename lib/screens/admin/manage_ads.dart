@@ -8,14 +8,21 @@ class ManageAdsPage extends StatelessWidget {
   @override
   Widget build(BuildContext context) => SafeArea(
     child: Scaffold(
-      appBar: AppBar(title: const Text('إدارة الإعلانات')),
+      appBar: AppBar(
+        title: const Text(
+          'إدارة الإعلانات',
+          style: TextStyle(color: Colors.white),
+        ),
+      ),
       body: const Center(child: Text('لا توجد إعلانات حالياً')),
       bottomNavigationBar: BottomNavigationBar(
         items: const [
           BottomNavigationBarItem(icon: Icon(Icons.home), label: 'الرئيسية'),
-          BottomNavigationBarItem(icon: Icon(Icons.settings), label: 'الإعدادات'),
+          BottomNavigationBarItem(
+            icon: Icon(Icons.settings),
+            label: 'الإعدادات',
+          ),
         ],
-        currentIndex: 0,
         onTap: (index) {
           if (index == 0) {
             Navigator.pushAndRemoveUntil(

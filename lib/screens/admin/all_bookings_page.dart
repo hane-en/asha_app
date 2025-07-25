@@ -153,7 +153,7 @@ class _AllBookingsPageState extends State<AllBookingsPage> {
   @override
   Widget build(BuildContext context) => Scaffold(
     appBar: AppBar(
-      title: const Text('إدارة الطلبات'),
+      title: const Text('إدارة الطلبات', style: TextStyle(color: Colors.white)),
       actions: [
         IconButton(
           icon: const Icon(Icons.refresh),
@@ -200,7 +200,7 @@ class _AllBookingsPageState extends State<AllBookingsPage> {
                       child: ListTile(
                         leading: const Icon(
                           Icons.event_note,
-                          color: Colors.blue,
+                          color: Colors.purple,
                         ),
                         title: Text('الخدمة: ${b['service_name'] ?? ''}'),
                         subtitle: Column(
@@ -224,7 +224,6 @@ class _AllBookingsPageState extends State<AllBookingsPage> {
         BottomNavigationBarItem(icon: Icon(Icons.home), label: 'الرئيسية'),
         BottomNavigationBarItem(icon: Icon(Icons.settings), label: 'الإعدادات'),
       ],
-      currentIndex: 0,
       onTap: (index) {
         if (index == 0) {
           Navigator.pushAndRemoveUntil(

@@ -116,7 +116,11 @@ class _ManageServicesState extends State<ManageServices> {
   Widget build(BuildContext context) => SafeArea(
     child: Scaffold(
       appBar: AppBar(
-        title: const Text('إدارة الخدمات'),
+        title: const Text(
+          'إدارة الخدمات',
+          style: TextStyle(color: Colors.white),
+        ),
+        backgroundColor: Colors.purple,
         actions: [
           IconButton(
             icon: const Icon(Icons.refresh),
@@ -139,7 +143,7 @@ class _ManageServicesState extends State<ManageServices> {
                     vertical: 4,
                   ),
                   child: ListTile(
-                    leading: const Icon(Icons.business, color: Colors.blue),
+                    leading: const Icon(Icons.business, color: Colors.purple),
                     title: Text(s['name'] ?? ''),
                     subtitle: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
@@ -190,7 +194,10 @@ class _ManageServicesState extends State<ManageServices> {
       bottomNavigationBar: BottomNavigationBar(
         items: const [
           BottomNavigationBarItem(icon: Icon(Icons.home), label: 'الرئيسية'),
-          BottomNavigationBarItem(icon: Icon(Icons.settings), label: 'الإعدادات'),
+          BottomNavigationBarItem(
+            icon: Icon(Icons.settings),
+            label: 'الإعدادات',
+          ),
         ],
         currentIndex: 0,
         onTap: (index) {

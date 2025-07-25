@@ -83,8 +83,8 @@ function convertArabicNumbers($number) {
 function validatePhone($phone) {
     $phone = convertArabicNumbers($phone);
     $phone = preg_replace('/[^0-9]/', '', $phone);
-    // قبول أي رقم من 7 إلى 15 رقم
-    return preg_match('/^[0-9]{7,15}$/', $phone);
+    // قبول فقط رقم مكون من 9 أرقام
+    return preg_match('/^[0-9]{9}$/', $phone);
 }
 
 // دالة لإنشاء كلمة مرور مشفرة

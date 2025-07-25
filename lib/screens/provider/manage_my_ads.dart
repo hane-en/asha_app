@@ -58,6 +58,7 @@ class _ManageMyAdsPageState extends State<ManageMyAdsPage> {
     child: Scaffold(
       appBar: AppBar(
         title: const Text('إعلاناتي'),
+        backgroundColor: Colors.purple,
         leading: IconButton(
           icon: const Icon(Icons.arrow_back),
           onPressed: () {

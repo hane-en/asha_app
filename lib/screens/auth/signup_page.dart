@@ -58,6 +58,7 @@ class _SignupPageState extends State<SignupPage> {
         phoneController.text.trim(),
         passwordController.text,
         confirmPasswordController.text,
+        selectedRole, // أضف هذا السطر
       );
 
       if (!mounted) return;
@@ -306,8 +307,7 @@ class _SignupPageState extends State<SignupPage> {
                               ),
                             ),
                           ],
-                          onChanged: (val) =>
-                              setState(() => selectedRole = val!),
+                        onChanged: (val) => setState(() => selectedRole = val!),
                         ),
                         const SizedBox(height: 24),
 

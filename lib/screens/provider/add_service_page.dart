@@ -66,19 +66,35 @@ class _AddServicePageState extends State<AddServicePage> {
     setState(() => _selectedIndex = index);
     switch (index) {
       case 0:
-        Navigator.pushNamed(context, '/provider_home_page');
+        Navigator.pushNamedAndRemoveUntil(
+          context,
+          '/provider-home',
+          (route) => false,
+        );
         break;
       case 1:
-        Navigator.pushNamed(context, '/provider_pending_page');
+        Navigator.pushNamedAndRemoveUntil(
+          context,
+          '/provider-pending',
+          (route) => false,
+        );
         break;
       case 2:
-        Navigator.pushNamed(context, '/my_services_page');
+        Navigator.pushNamedAndRemoveUntil(
+          context,
+          '/my-services',
+          (route) => false,
+        );
         break;
       case 3:
-        Navigator.pushNamed(context, '/my_bookings_page');
+        Navigator.pushNamedAndRemoveUntil(
+          context,
+          '/my-bookings',
+          (route) => false,
+        );
         break;
       case 4:
-        Navigator.pushNamed(context, '/my_ads_page');
+        Navigator.pushNamedAndRemoveUntil(context, '/my-ads', (route) => false);
         break;
     }
   }
@@ -88,7 +104,11 @@ class _AddServicePageState extends State<AddServicePage> {
     child: Scaffold(
       appBar: AppBar(
         title: const Row(
-          children: [Icon(Icons.add), SizedBox(width: 8), Text('إضافة خدمة')],
+          children: [
+            Icon(Icons.add),
+            SizedBox(width: 8),
+            Text('إضافة خدمة', style: TextStyle(color: Colors.white)),
+          ],
         ),
         leading: IconButton(
           icon: const Icon(Icons.arrow_back),

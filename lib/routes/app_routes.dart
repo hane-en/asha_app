@@ -1,35 +1,48 @@
 import 'package:flutter/material.dart';
-import 'route_names.dart';
-import 'route_arguments.dart';
+import 'package:shared_preferences/shared_preferences.dart';
+
+import '../screens/admin/admin_dashboard.dart';
+import '../screens/admin/admin_home_page.dart';
+import '../screens/admin/admin_settings_page.dart';
+import '../screens/admin/all_bookings_page.dart';
+import '../screens/admin/delete_user_page.dart';
+import '../screens/admin/edit_user_profile.dart';
+import '../screens/admin/join_requests_page.dart';
+import '../screens/admin/manage_ads.dart';
+import '../screens/admin/manage_bookings.dart';
+import '../screens/admin/manage_comments.dart';
+import '../screens/admin/manage_services.dart';
+import '../screens/admin/manage_users.dart';
+import '../screens/admin/search_user_page.dart';
+import '../screens/admin/user_details_page.dart';
+import '../screens/admin/user_list_page.dart';
+import '../screens/auth/forgot_password_page.dart';
+import '../screens/auth/login_admin.dart';
 import '../screens/auth/login_page.dart';
+import '../screens/auth/provider_login.dart';
 import '../screens/auth/signup_page.dart';
 import '../screens/auth/verify_page.dart';
-import '../screens/auth/forgot_password_page.dart';
-import '../screens/auth/provider_login.dart';
-import '../screens/auth/login_admin.dart';
-import '../screens/user/user_home_page.dart';
-import '../screens/user/favorites_page.dart';
-import '../screens/user/booking_status_page.dart';
-import '../screens/provider/provider_home_page.dart';
 import '../screens/provider/add_service_page.dart';
-import '../screens/provider/my_services_page.dart';
 import '../screens/provider/my_ads_page.dart';
 import '../screens/provider/my_bookings_page.dart';
+import '../screens/provider/my_services_page.dart';
+import '../screens/provider/notifications_page.dart';
+import '../screens/provider/provider_analytics_page.dart';
+import '../screens/provider/provider_home_page.dart';
 import '../screens/provider/provider_pending_page.dart';
 import '../screens/provider/send_massage_page.dart';
-import '../screens/admin/admin_home_page.dart';
-import '../screens/admin/user_list_page.dart';
-import '../screens/admin/all_bookings_page.dart';
-import '../config/config.dart';
-import '../screens/user/settings_page.dart';
+import '../screens/provider/settings_page.dart';
+import '../screens/user/booking_status_page.dart';
+import '../screens/user/favorites_page.dart';
+import '../screens/user/home_page.dart';
 import '../screens/user/notifications_page.dart';
 import '../screens/user/search_page.dart';
-import '../screens/user/home_page.dart';
-import 'package:shared_preferences/shared_preferences.dart';
-import '../screens/provider/provider_analytics_page.dart';
-import '../screens/provider/notifications_page.dart';
-import '../screens/provider/settings_page.dart';
+import '../screens/user/settings_page.dart';
 import '../screens/user/user_help_page.dart';
+import '../screens/user/user_home_page.dart';
+import '../screens/provider/provider_help_page.dart';
+import 'route_arguments.dart';
+import 'route_names.dart';
 
 class AppRoutes {
   // Route names - using centralized route names
@@ -60,6 +73,19 @@ class AppRoutes {
   static const String providerSettings = RouteNames.providerSettings;
   static const String splash = RouteNames.splash;
   static const String error = RouteNames.error;
+  static const String adminDashboard = RouteNames.adminDashboard;
+  static const String adminSettings = RouteNames.adminSettings;
+  static const String manageUsers = RouteNames.manageUsers;
+  static const String manageServices = RouteNames.manageServices;
+  static const String manageAds = RouteNames.manageAds;
+  static const String manageComments = RouteNames.manageComments;
+  static const String manageBookings = RouteNames.manageBookings;
+  static const String joinRequests = RouteNames.joinRequests;
+  static const String userDetails = RouteNames.userDetails;
+  static const String editUserProfile = RouteNames.editUserProfile;
+  static const String deleteUser = RouteNames.deleteUser;
+  static const String searchUser = RouteNames.searchUser;
+  static const String providerHelp = RouteNames.providerHelp;
 
   /// Route generator with improved type safety and error handling
   static Route<dynamic> generateRoute(RouteSettings settings) {
@@ -202,6 +228,77 @@ class AppRoutes {
           final errorMessage = args?.message ?? 'حدث خطأ غير متوقع';
           return MaterialPageRoute(
             builder: (_) => _ErrorPage(message: errorMessage),
+            settings: settings,
+          );
+        case RouteNames.adminDashboard:
+          return MaterialPageRoute(
+            builder: (_) => const AdminDashboardPage(),
+            settings: settings,
+          );
+        case RouteNames.adminSettings:
+          return MaterialPageRoute(
+            builder: (_) => const AdminSettingsPage(),
+            settings: settings,
+          );
+        case RouteNames.manageUsers:
+          return MaterialPageRoute(
+            builder: (_) => const ManageUsersPage(),
+            settings: settings,
+          );
+        case RouteNames.manageServices:
+          return MaterialPageRoute(
+            builder: (_) => const ManageServices(),
+            settings: settings,
+          );
+        case RouteNames.manageAds:
+          return MaterialPageRoute(
+            builder: (_) => const ManageAdsPage(),
+            settings: settings,
+          );
+        case RouteNames.manageComments:
+          return MaterialPageRoute(
+            builder: (_) => const ManageComments(),
+            settings: settings,
+          );
+        case RouteNames.manageBookings:
+          return MaterialPageRoute(
+            builder: (_) => const ManageBookings(),
+            settings: settings,
+          );
+        case RouteNames.joinRequests:
+          return MaterialPageRoute(
+            builder: (_) => const JoinRequestsPage(),
+            settings: settings,
+          );
+        case RouteNames.userDetails:
+          final args = settings.arguments as Map<String, dynamic>?;
+          return MaterialPageRoute(
+            builder: (_) => UserDetailsPage(user: args ?? {}),
+            settings: settings,
+          );
+        case RouteNames.editUserProfile:
+          final args = settings.arguments as Map<String, dynamic>?;
+          return MaterialPageRoute(
+            builder: (_) => EditUserProfilePage(user: args ?? {}),
+            settings: settings,
+          );
+        case RouteNames.deleteUser:
+          final args = settings.arguments as Map<String, dynamic>?;
+          return MaterialPageRoute(
+            builder: (_) => DeleteUserPage(
+              userId: args?['userId'] ?? 0,
+              userName: args?['userName'] ?? '',
+            ),
+            settings: settings,
+          );
+        case RouteNames.searchUser:
+          return MaterialPageRoute(
+            builder: (_) => const SearchUserPage(),
+            settings: settings,
+          );
+        case RouteNames.providerHelp:
+          return MaterialPageRoute(
+            builder: (_) => const ProviderHelpPage(),
             settings: settings,
           );
         case '/provider-notifications':

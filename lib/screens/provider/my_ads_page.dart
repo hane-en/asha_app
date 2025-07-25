@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import '../../routes/app_routes.dart';
+import 'add_ad_page.dart';
 
 class MyAdsPage extends StatefulWidget {
   const MyAdsPage({super.key});
@@ -23,7 +24,7 @@ class _MyAdsPageState extends State<MyAdsPage> {
   Widget build(BuildContext context) => SafeArea(
     child: Scaffold(
       appBar: AppBar(
-        title: const Text('إعلاناتي', style: TextStyle(color: Colors.white)),
+        title: const Text('إعلانات', style: TextStyle(color: Colors.white)),
         centerTitle: true,
         backgroundColor: Colors.purple,
         foregroundColor: Colors.white,
@@ -96,17 +97,28 @@ class _MyAdsPageState extends State<MyAdsPage> {
             ),
             ListTile(
               leading: const Icon(Icons.campaign),
-              title: const Text('إعلاناتي'),
+              title: const Text('إعلانات'),
               onTap: () => Navigator.pop(context),
             ),
           ],
         ),
       ),
-      body: const Center(child: Text('لا توجد إعلانات مضافة حالياً  ')),
+      body: const Center(child: Text('لا توجد إعلانات مضافة حالياً  ',
+      style: TextStyle(color: Color.fromARGB(255, 108, 108, 108)),)),
+      floatingActionButton: FloatingActionButton(
+        onPressed: () {
+          Navigator.push(
+            context,
+            MaterialPageRoute(builder: (_) => AddAdPage()),
+          );
+        },
+        child: Icon(Icons.add),
+        tooltip: 'إضافة إعلان',
+      ),
       bottomNavigationBar: BottomNavigationBar(
         currentIndex: currentIndex,
         selectedItemColor: Colors.purple,
-        unselectedItemColor: Colors.grey,
+        unselectedItemColor:Colors.grey,
         onTap: (index) {
           setState(() => currentIndex = index);
           switch (index) {
@@ -159,7 +171,7 @@ class _MyAdsPageState extends State<MyAdsPage> {
           ),
           BottomNavigationBarItem(
             icon: Icon(Icons.campaign),
-            label: 'إعلاناتي',
+            label: 'إعلانات',
           ),
         ],
       ),

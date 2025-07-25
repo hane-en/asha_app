@@ -96,6 +96,7 @@ class _EditAdPageState extends State<EditAdPage> {
         centerTitle: true,
         elevation: 0,
         foregroundColor: Colors.white,
+        backgroundColor: Colors.purple,
         leading: IconButton(
           icon: const Icon(Icons.arrow_back),
           onPressed: () {

@@ -42,7 +42,11 @@ class _SendMessagePageState extends State<SendMessagePage> {
     child: Scaffold(
       appBar: AppBar(
         title: const Row(
-          children: [Icon(Icons.sms), SizedBox(width: 8), Text('إرسال رسالة')],
+          children: [
+            Icon(Icons.sms),
+            SizedBox(width: 8),
+            Text('إرسال رسالة', style: TextStyle(color: Colors.white)),
+          ],
         ),
         leading: IconButton(
           icon: const Icon(Icons.arrow_back),

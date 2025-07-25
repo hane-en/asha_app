@@ -22,15 +22,18 @@ class AdminHomePage extends StatelessWidget {
     child: SafeArea(
       child: Scaffold(
         appBar: AppBar(
-          title: Text('لوحة الإدارة'),
+          title: const Text(
+            'لوحة الإدارة',
+            style: TextStyle(color: Colors.white),
+          ),
           actions: [
             IconButton(
-              icon: Icon(Icons.search),
+              icon: const Icon(Icons.search),
               tooltip: 'بحث عن مستخدم',
               onPressed: () {
                 Navigator.push(
                   context,
-                  MaterialPageRoute(builder: (_) => SearchUserPage()),
+                  MaterialPageRoute(builder: (_) => const SearchUserPage()),
                 );
               },
             ),
@@ -42,51 +45,51 @@ class AdminHomePage extends StatelessWidget {
             ElevatedButton(
               onPressed: () => Navigator.push(
                 context,
-                MaterialPageRoute(builder: (_) => JoinRequestsPage()),
+                MaterialPageRoute(builder: (_) => const JoinRequestsPage()),
               ),
-              child: Text('طلبات الانضمام'),
+              child: const Text('طلبات الانضمام'),
             ),
             ElevatedButton(
               onPressed: () => Navigator.push(
                 context,
-                MaterialPageRoute(builder: (_) => UserListPage()),
+                MaterialPageRoute(builder: (_) => const UserListPage()),
               ),
-              child: Text('المستخدمين'),
+              child: const Text('المستخدمين'),
             ),
             ElevatedButton(
               onPressed: () => Navigator.push(
                 context,
-                MaterialPageRoute(builder: (_) => ManageServices()),
+                MaterialPageRoute(builder: (_) => const ManageServices()),
               ),
-              child: Text('إدارة الخدمات'),
+              child: const Text('إدارة الخدمات'),
             ),
             ElevatedButton(
               onPressed: () => Navigator.push(
                 context,
-                MaterialPageRoute(builder: (_) => ManageAdsPage()),
+                MaterialPageRoute(builder: (_) => const ManageAdsPage()),
               ),
-              child: Text('إدارة الإعلانات'),
+              child: const Text('إدارة الإعلانات'),
             ),
             ElevatedButton(
               onPressed: () => Navigator.push(
                 context,
-                MaterialPageRoute(builder: (_) => ManageBookings()),
+                MaterialPageRoute(builder: (_) => const ManageBookings()),
               ),
-              child: Text('إدارة الحجوزات'),
+              child: const Text('إدارة الحجوزات'),
             ),
             ElevatedButton(
               onPressed: () => Navigator.push(
                 context,
-                MaterialPageRoute(builder: (_) => ManageComments()),
+                MaterialPageRoute(builder: (_) => const ManageComments()),
               ),
-              child: Text('إدارة التعليقات'),
+              child: const Text('إدارة التعليقات'),
             ),
             ElevatedButton(
               onPressed: () => Navigator.push(
                 context,
-                MaterialPageRoute(builder: (_) => AllBookingsPage()),
+                MaterialPageRoute(builder: (_) => const AllBookingsPage()),
               ),
-              child: Text('جميع الحجوزات'),
+              child: const Text('جميع الحجوزات'),
             ),
           ],
         ),
@@ -98,7 +101,6 @@ class AdminHomePage extends StatelessWidget {
               label: 'الإعدادات',
             ),
           ],
-          currentIndex: 0,
           onTap: (index) {
             if (index == 0) {
               // لا تفعل شيئاً إذا كنت بالفعل في الصفحة الرئيسية

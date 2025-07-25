@@ -66,6 +66,7 @@ class _EditServicePageState extends State<EditServicePage> {
     child: Scaffold(
       appBar: AppBar(
         title: const Text('تعديل الخدمة'),
+        backgroundColor: Colors.purple,
         leading: IconButton(
           icon: const Icon(Icons.arrow_back),
           onPressed: () {

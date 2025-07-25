@@ -273,7 +273,7 @@ class _ProviderHomePageState extends State<ProviderHomePage> {
                       title: const Text('المساعدة'),
                       onTap: () {
                         Navigator.pop(context);
-                        Navigator.pushNamed(context, AppRoutes.help);
+                        Navigator.pushNamed(context, AppRoutes.providerHelp);
                       },
                     ),
                     ListTile(
@@ -305,7 +305,10 @@ class _ProviderHomePageState extends State<ProviderHomePage> {
                         gradient: LinearGradient(
                           begin: Alignment.topLeft,
                           end: Alignment.bottomRight,
-                          colors: [Colors.purple, Colors.deepPurpleAccent],
+                          colors: [
+                            Colors.purple,
+                            Color.fromARGB(255, 170, 14, 201),
+                          ],
                         ),
                         borderRadius: BorderRadius.all(Radius.circular(16)),
                       ),
@@ -368,7 +371,7 @@ class _ProviderHomePageState extends State<ProviderHomePage> {
                             'الخدمات',
                             '12',
                             Icons.design_services,
-                            Colors.blue,
+                            Colors.purple,
                           ),
                         ),
                         const SizedBox(width: 12),
@@ -433,7 +436,7 @@ class _ProviderHomePageState extends State<ProviderHomePage> {
                           ),
                         ),
                         _buildActionCard(
-                          'إضافة إعلان',
+                          'إعلاناتي وإضافة إعلان',
                           Icons.campaign,
                           Colors.orange,
                           () => Navigator.push(

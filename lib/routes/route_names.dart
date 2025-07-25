@@ -36,6 +36,17 @@ class RouteNames {
   static const String adminSettings = '/admin-settings';
   static const String adminAnalytics = '/admin-analytics';
   static const String adminReports = '/admin-reports';
+  static const String adminDashboard = '/admin-dashboard';
+  static const String manageUsers = '/manage-users';
+  static const String manageServices = '/manage-services';
+  static const String manageAds = '/manage-ads';
+  static const String manageComments = '/manage-comments';
+  static const String manageBookings = '/manage-bookings';
+  static const String joinRequests = '/join-requests';
+  static const String userDetails = '/user-details';
+  static const String editUserProfile = '/edit-user-profile';
+  static const String deleteUser = '/delete-user';
+  static const String searchUser = '/search-user';
 
   static const String serviceDetails = '/service-details';
   static const String serviceSearch = '/service-search';

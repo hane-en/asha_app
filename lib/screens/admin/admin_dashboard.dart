@@ -13,7 +13,11 @@ class AdminDashboardPage extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) => Scaffold(
-    appBar: AppBar(title: const Text('لوحة تحكم المشرف')),
+    appBar: AppBar(
+      title: const Text('لوحة تحكم المشرف'),
+      backgroundColor: Colors.white,
+      foregroundColor: const Color.fromARGB(255, 255, 255, 255),
+    ),
     body: ListView(
       padding: const EdgeInsets.all(16),
       children: [
@@ -26,11 +30,13 @@ class AdminDashboardPage extends StatelessWidget {
       ],
     ),
     bottomNavigationBar: BottomNavigationBar(
+      backgroundColor: Colors.white,
+      selectedItemColor: Colors.purple,
+      unselectedItemColor: Colors.grey,
       items: const [
         BottomNavigationBarItem(icon: Icon(Icons.home), label: 'الرئيسية'),
         BottomNavigationBarItem(icon: Icon(Icons.settings), label: 'الإعدادات'),
       ],
-      currentIndex: 0, // هذه الصفحة هي الرئيسية
       onTap: (index) {
         if (index == 1) {
           Navigator.push(

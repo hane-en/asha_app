@@ -12,7 +12,11 @@ class UserDetailsPage extends StatelessWidget {
   Widget build(BuildContext context) => SafeArea(
     child: Scaffold(
       appBar: AppBar(
-        title: const Text('تفاصيل المستخدم'),
+        title: const Text(
+          'تفاصيل المستخدم',
+          style: TextStyle(color: Colors.white),
+        ),
+        backgroundColor: Colors.purple,
         actions: [
           IconButton(
             icon: const Icon(Icons.edit),
@@ -154,7 +158,10 @@ class UserDetailsPage extends StatelessWidget {
       bottomNavigationBar: BottomNavigationBar(
         items: const [
           BottomNavigationBarItem(icon: Icon(Icons.home), label: 'الرئيسية'),
-          BottomNavigationBarItem(icon: Icon(Icons.settings), label: 'الإعدادات'),
+          BottomNavigationBarItem(
+            icon: Icon(Icons.settings),
+            label: 'الإعدادات',
+          ),
         ],
         currentIndex: 0,
         onTap: (index) {
@@ -178,7 +185,7 @@ class UserDetailsPage extends StatelessWidget {
 
   Widget _buildInfoRow(String label, String value, IconData icon) => Row(
     children: [
-      Icon(icon, color: Colors.blue, size: 20),
+      Icon(icon, color: Colors.purple, size: 20),
       const SizedBox(width: 8),
       Expanded(
         child: Column(

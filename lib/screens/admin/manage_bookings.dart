@@ -144,7 +144,10 @@ class _ManageBookingsState extends State<ManageBookings> {
   Widget build(BuildContext context) => SafeArea(
     child: Scaffold(
       appBar: AppBar(
-        title: const Text('إدارة الحجوزات'),
+        title: const Text(
+          'إدارة الحجوزات',
+          style: TextStyle(color: Colors.white),
+        ),
         actions: [
           IconButton(
             icon: const Icon(Icons.refresh),
@@ -191,7 +194,7 @@ class _ManageBookingsState extends State<ManageBookings> {
                         child: ListTile(
                           leading: const Icon(
                             Icons.event_note,
-                            color: Colors.blue,
+                            color: Colors.purple,
                           ),
                           title: Text('الخدمة: ${b['service_name'] ?? ''}'),
                           subtitle: Column(
@@ -214,9 +217,11 @@ class _ManageBookingsState extends State<ManageBookings> {
       bottomNavigationBar: BottomNavigationBar(
         items: const [
           BottomNavigationBarItem(icon: Icon(Icons.home), label: 'الرئيسية'),
-          BottomNavigationBarItem(icon: Icon(Icons.settings), label: 'الإعدادات'),
+          BottomNavigationBarItem(
+            icon: Icon(Icons.settings),
+            label: 'الإعدادات',
+          ),
         ],
-        currentIndex: 0,
         onTap: (index) {
           if (index == 0) {
             Navigator.pushAndRemoveUntil(

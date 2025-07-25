@@ -5,8 +5,8 @@ import 'package:provider/provider.dart';
 
 import 'config/config.dart';
 import 'routes/app_routes.dart';
-import 'screens/user/settings_page.dart' show LocaleNotifier;
 import 'screens/provider/settings_page.dart' show ProviderLocaleNotifier;
+import 'screens/user/settings_page.dart' show LocaleNotifier;
 import 'utils/constants.dart';
 import 'utils/helpers.dart';
 
