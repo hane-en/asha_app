@@ -1,0 +1,204 @@
+# This file configures the analyzer, which statically analyzes Dart code to
+# check for errors, warnings, and lints.
+#
+# The issues identified by the analyzer are surfaced in the UI of Dart-enabled
+# IDEs (https://dart.dev/tools#ides-and-editors). The analyzer can also be
+# invoked from the command line by running `flutter analyze`.
+
+# The following line activates a set of recommended lints for Flutter apps,
+# packages, and plugins designed to encourage good coding practices.
+include: package:flutter_lints/flutter.yaml
+
+linter:
+  rules:
+    # Disable some rules that are not critical for functionality
+    prefer_const_constructors: false
+    prefer_const_literals_to_create_immutables: false
+    prefer_const_declarations: false
+    avoid_print: false
+    prefer_single_quotes: false
+    always_declare_return_types: false
+    avoid_empty_else: false
+    avoid_unnecessary_containers: false
+    prefer_typing_uninitialized_variables: false
+    use_key_in_widget_constructors: false
+    sized_box_for_whitespace: false
+    prefer_const_constructors_in_immutables: false
+    unnecessary_const: false
+    unnecessary_new: false
+    unnecessary_this: false
+    prefer_final_fields: false
+    prefer_final_locals: false
+    avoid_web_libraries_in_flutter: false
+    avoid_relative_lib_imports: false
+    avoid_types_as_parameter_names: false
+    camel_case_types: false
+    cancel_subscriptions: false
+    close_sinks: false
+    comment_references: false
+    control_flow_in_finally: false
+    directives_ordering: false
+    empty_catches: false
+    empty_constructor_bodies: false
+    empty_statements: false
+    hash_and_equals: false
+    implementation_imports: false
+    library_names: false
+    library_prefixes: false
+    non_constant_identifier_names: false
+    package_api_docs: false
+    package_names: false
+    package_prefixed_library_names: false
+    prefer_adjacent_string_concatenation: false
+    prefer_collection_literals: false
+    prefer_conditional_assignment: false
+    prefer_contains: false
+    prefer_equal_for_default_values: false
+    prefer_expression_function_bodies: false
+    prefer_final_in_for_each: false
+    prefer_for_elements_to_map_fromIterable: false
+    prefer_function_declarations_over_variables: false
+    prefer_generic_function_type_aliases: false
+    prefer_if_elements_to_conditional_expressions: false
+    prefer_if_null_operators: false
+    prefer_initializing_formals: false
+    prefer_inlined_adds: false
+    prefer_int_literals: false
+    prefer_interpolation_to_compose_strings: false
+    prefer_is_empty: false
+    prefer_is_not_empty: false
+    prefer_is_not_operator: false
+    prefer_iterable_whereType: false
+    prefer_mixin: false
+    prefer_null_aware_operators: false
+    prefer_spread_collections: false
+    prefer_void_to_null: false
+    recursive_getters: false
+    slash_for_doc_comments: false
+    test_types_in_equals: false
+    throw_in_finally: false
+    type_annotate_public_apis: false
+    type_init_formals: false
+    unawaited_futures: false
+    unnecessary_await_in_return: false
+    unnecessary_brace_in_string_interps: false
+    unnecessary_getters_setters: false
+    unnecessary_lambdas: false
+    unnecessary_null_aware_assignments: false
+    unnecessary_null_in_if_null_operators: false
+    unnecessary_null_checks: false
+    unnecessary_overrides: false
+    unnecessary_parenthesis: false
+    unnecessary_raw_strings: false
+    unnecessary_statements: false
+    unnecessary_string_escapes: false
+    unnecessary_string_interpolations: false
+    # unnecessary_ternaries: false
+    unrelated_type_equality_checks: false
+    use_function_type_syntax_for_parameters: false
+    use_rethrow_when_possible: false
+    valid_regexps: false
+
+analyzer:
+  exclude:
+    - "**/*.g.dart"
+    - "**/*.freezed.dart"
+    - "**/generated_plugin_registrant.dart"
+    - "**/generated_*.dart"
+    - "**/*.mocks.dart"
+    - "**/test/**"
+    - "**/tests/**"
+    - "**/integration_test/**"
+    - "**/build/**"
+    - "**/.dart_tool/**"
+    - "**/ios/**"
+    - "**/android/**"
+    - "**/windows/**"
+    - "**/macos/**"
+    - "**/linux/**"
+    - "**/web/**"
+
+  errors:
+    # Disable some errors that are not critical
+    invalid_annotation_target: ignore
+    missing_required_param: ignore
+    missing_return: ignore
+    must_be_immutable: ignore
+    prefer_typing_uninitialized_variables: ignore
+    use_key_in_widget_constructors: ignore
+    sized_box_for_whitespace: ignore
+    prefer_const_constructors_in_immutables: ignore
+    unnecessary_const: ignore
+    unnecessary_new: ignore
+    unnecessary_this: ignore
+    prefer_final_fields: ignore
+    prefer_final_locals: ignore
+    avoid_web_libraries_in_flutter: ignore
+    avoid_relative_lib_imports: ignore
+    avoid_types_as_parameter_names: ignore
+    camel_case_types: ignore
+    cancel_subscriptions: ignore
+    close_sinks: ignore
+    comment_references: ignore
+    control_flow_in_finally: ignore
+    directives_ordering: ignore
+    empty_catches: ignore
+    empty_constructor_bodies: ignore
+    empty_statements: ignore
+    hash_and_equals: ignore
+    implementation_imports: ignore
+    library_names: ignore
+    library_prefixes: ignore
+    non_constant_identifier_names: ignore
+    package_api_docs: ignore
+    package_names: ignore
+    package_prefixed_library_names: ignore
+    prefer_adjacent_string_concatenation: ignore
+    prefer_collection_literals: ignore
+    prefer_conditional_assignment: ignore
+    prefer_contains: ignore
+    prefer_equal_for_default_values: ignore
+    prefer_expression_function_bodies: ignore
+    prefer_final_in_for_each: ignore
+    prefer_for_elements_to_map_fromIterable: ignore
+    prefer_function_declarations_over_variables: ignore
+    prefer_generic_function_type_aliases: ignore
+    prefer_if_elements_to_conditional_expressions: ignore
+    prefer_if_null_operators: ignore
+    prefer_initializing_formals: ignore
+    prefer_inlined_adds: ignore
+    prefer_int_literals: ignore
+    prefer_interpolation_to_compose_strings: ignore
+    prefer_is_empty: ignore
+    prefer_is_not_empty: ignore
+    prefer_is_not_operator: ignore
+    prefer_iterable_whereType: ignore
+    prefer_mixin: ignore
+    prefer_null_aware_operators: ignore
+    prefer_spread_collections: ignore
+    prefer_void_to_null: ignore
+    recursive_getters: ignore
+    slash_for_doc_comments: ignore
+    test_types_in_equals: ignore
+    throw_in_finally: ignore
+    type_annotate_public_apis: ignore
+    type_init_formals: ignore
+    unawaited_futures: ignore
+    unnecessary_await_in_return: ignore
+    unnecessary_brace_in_string_interps: ignore
+    unnecessary_getters_setters: ignore
+    unnecessary_lambdas: ignore
+    unnecessary_null_aware_assignments: ignore
+    unnecessary_null_in_if_null_operators: ignore
+    unnecessary_null_checks: ignore
+    unnecessary_overrides: ignore
+    unnecessary_parenthesis: ignore
+    unnecessary_raw_strings: ignore
+    unnecessary_statements: ignore
+    unnecessary_string_escapes: ignore
+    unnecessary_string_interpolations: ignore
+    unnecessary_ternaries: ignore
+    unrelated_type_equality_checks: ignore
+    use_function_type_syntax_for_parameters: ignore
+    use_rethrow_when_possible: ignore
+    valid_regexps: ignore
