@@ -3,6 +3,8 @@ import 'package:shared_preferences/shared_preferences.dart';
 import '../../routes/app_routes.dart';
 import '../../services/provider_service.dart';
 import '../../models/provider_service_model.dart';
+import '../../models/provider_service_with_categories_model.dart';
+import '../../models/service_category_model.dart';
 import 'edit_service_page.dart';
 
 class MyServicesPage extends StatefulWidget {
@@ -14,7 +16,7 @@ class MyServicesPage extends StatefulWidget {
 
 class _MyServicesPageState extends State<MyServicesPage> {
   int currentIndex = 2;
-  List<ProviderServiceModel> services = [];
+  List<ProviderServiceWithCategories> services = [];
   bool _isLoading = false;
   String? _errorMessage;
 
@@ -31,10 +33,10 @@ class _MyServicesPageState extends State<MyServicesPage> {
     });
 
     try {
-      final servicesData = await ProviderService.getMyServicesWithReviews();
+      final servicesData = await ProviderService.getMyServicesWithCategories();
       setState(() {
         services = servicesData
-            .map((data) => ProviderServiceModel.fromJson(data))
+            .map((data) => ProviderServiceWithCategories.fromJson(data))
             .toList();
         _isLoading = false;
       });
@@ -46,7 +48,7 @@ class _MyServicesPageState extends State<MyServicesPage> {
     }
   }
 
-  Future<void> _deleteService(ProviderServiceModel service) async {
+  Future<void> _deleteService(ProviderServiceWithCategories service) async {
     final confirmed = await showDialog<bool>(
       context: context,
       builder: (context) => AlertDialog(
@@ -101,7 +103,7 @@ class _MyServicesPageState extends State<MyServicesPage> {
     }
   }
 
-  void _editService(ProviderServiceModel service) {
+  void _editService(ProviderServiceWithCategories service) {
     // سيتم تنفيذ التعديل في صفحة منفصلة
     ScaffoldMessenger.of(context).showSnackBar(
       const SnackBar(
@@ -122,7 +124,7 @@ class _MyServicesPageState extends State<MyServicesPage> {
     );
   }
 
-  void _viewServiceDetails(ProviderServiceModel service) {
+  void _viewServiceDetails(ProviderServiceWithCategories service) {
     // عرض تفاصيل الخدمة في dialog
     showDialog(
       context: context,
@@ -155,7 +157,7 @@ class _MyServicesPageState extends State<MyServicesPage> {
               const SizedBox(height: 8),
               Text('الموقع: ${service.location ?? 'غير محدد'}'),
               const SizedBox(height: 8),
-              Text('الفئة: ${service.category.name}'),
+              Text('الفئة: ${service.categoryName}'),
               const SizedBox(height: 8),
               Text('الحالة: ${service.statusText}'),
               const SizedBox(height: 8),
@@ -201,21 +203,25 @@ class _MyServicesPageState extends State<MyServicesPage> {
                                     size: 16,
                                   ),
                                   const SizedBox(width: 4),
-                                  Text('${review.rating}/5'),
+                                  Text('${review['rating'] ?? 0}/5'),
                                   const Spacer(),
                                   Text(
-                                    review.formattedDate,
+                                    review['formatted_date'] ??
+                                        review['created_at'] ??
+                                        '',
                                     style: TextStyle(color: Colors.grey),
                                   ),
                                 ],
                               ),
                               const SizedBox(height: 4),
                               Text(
-                                review.userName,
+                                review['user_name'] ??
+                                    review['userName'] ??
+                                    'مستخدم',
                                 style: TextStyle(fontWeight: FontWeight.bold),
                               ),
                               const SizedBox(height: 4),
-                              Text(review.comment),
+                              Text(review['comment'] ?? ''),
                             ],
                           ),
                         ),
@@ -455,7 +461,7 @@ class _MyServicesPageState extends State<MyServicesPage> {
                                     color: Colors.grey,
                                   ),
                                   const SizedBox(width: 4),
-                                  Text(service.category.name),
+                                  Text(service.categoryName),
                                   const Spacer(),
                                   Icon(
                                     Icons.location_on,

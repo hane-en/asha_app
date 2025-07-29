@@ -15,6 +15,7 @@ class _ProviderRequestsPageState extends State<ProviderRequestsPage> {
   int _currentPage = 1;
   String? _selectedStatus;
   final int _perPage = 10;
+  bool _hasMoreData = true;
 
   @override
   void initState() {
@@ -24,10 +25,13 @@ class _ProviderRequestsPageState extends State<ProviderRequestsPage> {
 
   Future<void> _loadRequests({bool refresh = false}) async {
     if (refresh) {
-      setState(() => _isLoading = true);
-      _currentPage = 1;
+      setState(() {
+        _requests = [];
+        _stats = null;
+      });
     }
 
+    setState(() => _isLoading = true);
     try {
       final response = await AdminService.getProviderRequests(
         page: _currentPage,
@@ -35,17 +39,26 @@ class _ProviderRequestsPageState extends State<ProviderRequestsPage> {
       );
 
       if (response['success'] == true) {
+        final newRequests = List<Map<String, dynamic>>.from(
+          response['data'] ?? [],
+        );
+
         setState(() {
-          if (refresh) {
-            _requests = List<Map<String, dynamic>>.from(response['data']);
+          if (refresh || _currentPage == 1) {
+            _requests = newRequests;
           } else {
-            _requests.addAll(List<Map<String, dynamic>>.from(response['data']));
+            _requests.addAll(newRequests);
           }
-          _stats = response['stats'];
+          _stats = response['stats'] ?? {};
           _isLoading = false;
+          _hasMoreData = newRequests.length >= _perPage;
         });
       } else {
-        setState(() => _isLoading = false);
+        setState(() {
+          _requests = [];
+          _stats = {};
+          _isLoading = false;
+        });
         if (mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
             SnackBar(
@@ -56,7 +69,11 @@ class _ProviderRequestsPageState extends State<ProviderRequestsPage> {
         }
       }
     } catch (e) {
-      setState(() => _isLoading = false);
+      setState(() {
+        _requests = [];
+        _stats = {};
+        _isLoading = false;
+      });
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(content: Text('خطأ: $e'), backgroundColor: Colors.red),
@@ -70,31 +87,31 @@ class _ProviderRequestsPageState extends State<ProviderRequestsPage> {
     if (adminNotes == null) return; // User cancelled
 
     try {
-      Map<String, dynamic> response;
+      bool success;
       if (action == 'approve') {
-        response = await AdminService.approveProviderRequest(
+        success = await AdminService.approveProviderRequest(
           requestId,
           adminNotes: adminNotes,
         );
       } else {
-        response = await AdminService.rejectProviderRequest(
+        success = await AdminService.rejectProviderRequest(
           requestId,
           adminNotes: adminNotes,
         );
       }
 
-      if (response['success'] == true) {
+      if (success) {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text(response['message']),
+          const SnackBar(
+            content: Text('تم معالجة الطلب بنجاح'),
             backgroundColor: Colors.green,
           ),
         );
         _loadRequests(refresh: true);
       } else {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('خطأ: ${response['message']}'),
+          const SnackBar(
+            content: Text('خطأ في معالجة الطلب'),
             backgroundColor: Colors.red,
           ),
         );

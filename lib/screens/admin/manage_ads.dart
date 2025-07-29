@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import '../../services/admin_api.dart';
+import '../../services/admin_service.dart';
 import 'admin_home_page.dart';
 import 'admin_settings_page.dart';
 
@@ -24,28 +24,17 @@ class _ManageAdsPageState extends State<ManageAdsPage> {
   Future<void> loadAds() async {
     setState(() => isLoading = true);
     try {
-      final response = await AdminApi.getAllAdsWithStats();
-      if (response['success'] == true) {
-        setState(() {
-          ads = List<Map<String, dynamic>>.from(response['data']);
-          stats = response['stats'];
-          isLoading = false;
-        });
-      } else {
-        setState(() => isLoading = false);
-        if (mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(
-              content: Text(
-                'خطأ: ${response['message'] ?? 'فشل في تحميل الإعلانات'}',
-              ),
-              backgroundColor: Colors.red,
-            ),
-          );
-        }
-      }
+      final adsList = await AdminService.getAllAds();
+
+      setState(() {
+        ads = adsList;
+        isLoading = false;
+      });
     } catch (e) {
-      setState(() => isLoading = false);
+      setState(() {
+        ads = [];
+        isLoading = false;
+      });
       if (mounted) {
         ScaffoldMessenger.of(
           context,
@@ -104,7 +93,7 @@ class _ManageAdsPageState extends State<ManageAdsPage> {
 
     if (confirmed == true) {
       try {
-        final result = await AdminApi.deleteAdWithNotification(
+        final result = await AdminService.deleteAdWithNotification(
           adId,
           reasonController.text.trim().isEmpty
               ? 'تم حذف الإعلان من قبل المدير'

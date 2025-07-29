@@ -41,20 +41,40 @@ class _UserHomePageState extends State<UserHomePage> {
     _loadUserData();
     _loadCategories();
     _loadFeaturedServices();
+
+    // اختبار إضافي للفئات
+    _testCategories();
+  }
+
+  // دالة اختبار الفئات
+  Future<void> _testCategories() async {
+    try {
+      final result = await ApiService.getCategories();
+
+      for (var category in result) {
+        print('Category: ${category['name']}');
+      }
+    } catch (e) {
+      print('Categories test failed: $e');
+    }
   }
 
   Future<void> _loadUserData() async {
     setState(() => _isLoading = true);
     try {
       final prefs = await SharedPreferences.getInstance();
-      setState(() {
-        _userName = prefs.getString('user_name');
-        _userRole = prefs.getString('role');
-      });
+      if (mounted) {
+        setState(() {
+          _userName = prefs.getString('user_name');
+          _userRole = prefs.getString('role');
+        });
+      }
     } catch (e) {
       print('Error loading user data: $e');
     } finally {
-      setState(() => _isLoading = false);
+      if (mounted) {
+        setState(() => _isLoading = false);
+      }
     }
   }
 
@@ -62,13 +82,22 @@ class _UserHomePageState extends State<UserHomePage> {
     setState(() => _isLoadingCategories = true);
     try {
       final categoriesData = await ApiService.getCategories();
-      setState(() {
-        categories = categoriesData
-            .map((data) => CategoryModel.fromJson(data))
-            .toList();
-      });
+
+      if (categoriesData.isNotEmpty) {
+        setState(() {
+          categories = categoriesData
+              .map((data) => CategoryModel.fromJson(data))
+              .toList();
+        });
+      } else {
+        setState(() {
+          categories = [];
+        });
+      }
     } catch (e) {
-      print('Error loading categories: $e');
+      setState(() {
+        categories = [];
+      });
     } finally {
       setState(() => _isLoadingCategories = false);
     }
@@ -79,13 +108,27 @@ class _UserHomePageState extends State<UserHomePage> {
     try {
       final result = await ApiService.getServicesWithOffers(limit: 6);
       final servicesData = result['services'] ?? [];
-      setState(() {
-        featuredServices = servicesData
-            .map((data) => ServiceWithOffersModel.fromJson(data))
-            .toList();
-      });
+
+      if (servicesData is List) {
+        setState(() {
+          featuredServices = servicesData
+              .where((data) => data is Map<String, dynamic>)
+              .map(
+                (data) => ServiceWithOffersModel.fromJson(
+                  data as Map<String, dynamic>,
+                ),
+              )
+              .toList();
+        });
+      } else {
+        setState(() {
+          featuredServices = [];
+        });
+      }
     } catch (e) {
-      print('Error loading featured services: $e');
+      setState(() {
+        featuredServices = [];
+      });
     } finally {
       setState(() => _isLoadingServices = false);
     }

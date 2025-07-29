@@ -2,11 +2,9 @@ import 'dart:convert';
 import 'package:shared_preferences/shared_preferences.dart';
 import '../models/user_model.dart';
 import '../constants/api_constants.dart';
-import 'http_service.dart';
+import 'api_service.dart';
 
 class AuthService {
-  final HttpService _httpService = HttpService();
-  
   Future<Map<String, dynamic>> register({
     required String name,
     required String email,
@@ -37,10 +35,10 @@ class AuthService {
       if (userCategory != null) 'user_category': userCategory,
       'is_yemeni_account': isYemeniAccount,
     };
-    
-    return await _httpService.post(ApiConstants.register, data: data);
+
+    return await ApiService.register(data);
   }
-  
+
   Future<Map<String, dynamic>> login({
     required String email,
     required String password,
@@ -51,76 +49,86 @@ class AuthService {
       'password': password,
       if (userType != null) 'user_type': userType,
     };
-    
-    final response = await _httpService.post(ApiConstants.login, data: data);
-    
+
+    final response = await ApiService.login(
+      email: email,
+      password: password,
+      userType: userType,
+    );
+
     if (response['success'] == true) {
       final userData = response['data'];
       await _saveUserData(userData['user'], userData['token']);
     }
-    
+    print(response);
     return response;
   }
-  
+
   Future<Map<String, dynamic>> verify({
     required String email,
     required String code,
   }) async {
-    final data = {
-      'email': email,
-      'code': code,
-    };
-    
-    return await _httpService.post(ApiConstants.verify, data: data);
+    return await ApiService.verify(email: email, code: code);
   }
-  
-  Future<Map<String, dynamic>> forgotPassword({
-    required String email,
-  }) async {
-    final data = {
-      'email': email,
-    };
-    
-    return await _httpService.post(ApiConstants.forgotPassword, data: data);
+
+  Future<Map<String, dynamic>> forgotPassword({required String email}) async {
+    return await ApiService.forgotPassword(email: email);
   }
-  
+
   Future<Map<String, dynamic>> resetPassword({
     required String email,
     required String code,
     required String newPassword,
   }) async {
-    final data = {
-      'email': email,
-      'code': code,
-      'new_password': newPassword,
-    };
-    
-    return await _httpService.post(ApiConstants.resetPassword, data: data);
+    return await ApiService.resetUserPassword(
+      email: email,
+      code: code,
+      newPassword: newPassword,
+    );
   }
-  
-  Future<void> _saveUserData(Map<String, dynamic> userData, String token) async {
+
+  Future<void> _saveUserData(
+    Map<String, dynamic> userData,
+    String token,
+  ) async {
     final prefs = await SharedPreferences.getInstance();
     await prefs.setString('auth_token', token);
     await prefs.setString('user_data', jsonEncode(userData));
+    // حفظ معرف المستخدم بشكل منفصل للوصول السريع
+    // تحويل id إلى int إذا كان string
+    final userId = userData['id'];
+    if (userId != null) {
+      if (userId is int) {
+        await prefs.setInt('user_id', userId);
+      } else if (userId is String) {
+        await prefs.setInt('user_id', int.tryParse(userId) ?? 0);
+      } else {
+        await prefs.setInt('user_id', 0);
+      }
+    } else {
+      await prefs.setInt('user_id', 0);
+    }
+    await prefs.setString('user_name', userData['name'] ?? '');
+    await prefs.setString('user_type', userData['user_type'] ?? 'user');
   }
-  
+
   Future<User?> getCurrentUser() async {
     final prefs = await SharedPreferences.getInstance();
     final userDataString = prefs.getString('user_data');
-    
+
     if (userDataString != null) {
       final userData = jsonDecode(userDataString);
       return User.fromJson(userData);
     }
-    
+
     return null;
   }
-  
+
   Future<bool> isLoggedIn() async {
     final prefs = await SharedPreferences.getInstance();
     return prefs.getString('auth_token') != null;
   }
-  
+
   Future<void> logout() async {
     final prefs = await SharedPreferences.getInstance();
     await prefs.remove('auth_token');

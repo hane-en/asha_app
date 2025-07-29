@@ -69,24 +69,34 @@ class ApiService {
       }
 
       if (response.statusCode >= 200 && response.statusCode < 300) {
-        final responseData = json.decode(response.body);
-        return responseData;
+        try {
+          final responseData = json.decode(response.body);
+          return responseData;
+        } catch (e) {
+          print('Error parsing JSON response: $e');
+          return {'success': false, 'message': 'خطأ في تنسيق البيانات'};
+        }
       } else {
-        throw HttpException(
-          'HTTP ${response.statusCode}: ${response.reasonPhrase}',
-        );
+        print('HTTP Error: ${response.statusCode} - ${response.reasonPhrase}');
+        return {
+          'success': false,
+          'message': 'خطأ في الاتصال بالخادم (${response.statusCode})',
+        };
       }
-    } on SocketException {
-      throw Exception(Config.networkErrorMessage);
-    } on TimeoutException {
-      throw Exception(Config.timeoutErrorMessage);
-    } on FormatException {
-      throw Exception('خطأ في تنسيق البيانات');
+    } on SocketException catch (e) {
+      print('Socket Exception: $e');
+      return {'success': false, 'message': Config.networkErrorMessage};
+    } on TimeoutException catch (e) {
+      print('Timeout Exception: $e');
+      return {'success': false, 'message': Config.timeoutErrorMessage};
+    } on FormatException catch (e) {
+      print('Format Exception: $e');
+      return {'success': false, 'message': 'خطأ في تنسيق البيانات'};
     } catch (e) {
       if (Config.enableLogging) {
         print('API Error: $e');
       }
-      throw Exception(Config.unknownErrorMessage);
+      return {'success': false, 'message': 'خطأ في الاتصال: $e'};
     }
   }
 
@@ -94,7 +104,7 @@ class ApiService {
   static Future<bool> addToFavorites(int userId, int serviceId) async {
     try {
       final data = await _makeRequest(
-        'user/add_to_favorites.php',
+        'api/favorites/toggle_simple.php',
         body: json.encode({'user_id': userId, 'service_id': serviceId}),
         isPost: true,
       );
@@ -108,7 +118,7 @@ class ApiService {
   static Future<bool> removeFavorite(int userId, int serviceId) async {
     try {
       final data = await _makeRequest(
-        'user/remove_favorite.php',
+        'api/favorites/toggle_simple.php',
         body: json.encode({'user_id': userId, 'service_id': serviceId}),
         isPost: true,
       );
@@ -121,7 +131,9 @@ class ApiService {
 
   static Future<List<Map<String, dynamic>>> getFavorites(int userId) async {
     try {
-      final data = await _makeRequest('user/get_favorites.php?user_id=$userId');
+      final data = await _makeRequest(
+        'api/favorites/get_user_favorites_simple.php?user_id=$userId',
+      );
       if (data['success'] == true) {
         return List<Map<String, dynamic>>.from(data['data']);
       }
@@ -136,12 +148,15 @@ class ApiService {
   static Future<List<Service>> getServicesByCategory(String category) async {
     try {
       final data = await _makeRequest(
-        'services/get_services.php?category=$category',
+        'api/services/get_all.php?category_id=$category',
       );
-      if (data['success'] == true) {
-        return List<Service>.from(
-          data['data'].map((item) => Service.fromJson(item)),
-        );
+      if (data['success'] == true && data['data'] != null) {
+        final servicesData = data['data']['services'] ?? data['data'];
+        if (servicesData is List) {
+          return List<Service>.from(
+            servicesData.map((item) => Service.fromJson(item)),
+          );
+        }
       }
       return [];
     } catch (e) {
@@ -152,22 +167,38 @@ class ApiService {
 
   static Future<List<Service>> getAllServices() async {
     try {
-      final data = await _makeRequest('services/get_services.php');
-      if (data['success'] == true) {
-        return List<Service>.from(
-          data['data'].map((item) => Service.fromJson(item)),
-        );
+      print('🔍 Fetching all services...');
+      final data = await _makeRequest('api/services/get_all.php');
+      print('📊 API response: $data');
+
+      if (data['success'] == true && data['data'] != null) {
+        final servicesData = data['data']['services'] ?? data['data'];
+        print('📋 Services data: $servicesData');
+
+        if (servicesData is List) {
+          final result = List<Service>.from(
+            servicesData.map((item) => Service.fromJson(item)),
+          );
+          print('✅ Processed services: ${result.length} services');
+          return result;
+        } else {
+          print('⚠️ Services data is not a List: ${servicesData.runtimeType}');
+        }
+      } else {
+        print('❌ API returned success: false - ${data['message']}');
       }
       return [];
     } catch (e) {
-      print('Error getting all services: $e');
+      print('❌ Error getting all services: $e');
       return [];
     }
   }
 
   static Future<Service?> getServiceById(int serviceId) async {
     try {
-      final data = await _makeRequest('services/get_service.php?id=$serviceId');
+      final data = await _makeRequest(
+        'api/services/get_by_id.php?id=$serviceId',
+      );
       if (data['success'] == true) {
         return Service.fromJson(data['data']);
       }
@@ -182,7 +213,7 @@ class ApiService {
   static Future<Map<String, dynamic>> getServiceDetails(int serviceId) async {
     try {
       final data = await _makeRequest(
-        'services/get_service_details.php?id=$serviceId',
+        'api/services/get_by_id.php?id=$serviceId',
       );
       if (data['success'] == true) {
         return Map<String, dynamic>.from(data['data']);
@@ -198,7 +229,7 @@ class ApiService {
   static Future<Map<String, dynamic>> getProviderInfo(int serviceId) async {
     try {
       final data = await _makeRequest(
-        'services/get_provider_info.php?service_id=$serviceId',
+        'api/services/get_provider_info.php?service_id=$serviceId',
       );
       if (data['success'] == true) {
         return Map<String, dynamic>.from(data['data']);
@@ -213,7 +244,7 @@ class ApiService {
   static Future<List<Service>> searchServices(String query) async {
     try {
       final data = await _makeRequest(
-        'services/search_services.php?q=${Uri.encodeComponent(query)}',
+        'api/services/search.php?q=${Uri.encodeComponent(query)}',
       );
       if (data['success'] == true) {
         return List<Service>.from(
@@ -230,13 +261,32 @@ class ApiService {
   // 🟢 جلب الفئات الديناميكية
   static Future<List<Map<String, dynamic>>> getCategories() async {
     try {
-      final data = await _makeRequest('services/get_categories.php');
+      print('🔍 Making request to categories API...');
+      final data = await _makeRequest('api/services/get_categories.php');
+      print('📊 API response: $data');
+
       if (data['success'] == true) {
-        return List<Map<String, dynamic>>.from(data['data'] ?? []);
+        final categoriesData = data['data'];
+        print('📋 Categories data: $categoriesData');
+
+        if (categoriesData is List) {
+          final result = categoriesData
+              .where((item) => item is Map<String, dynamic>)
+              .map((item) => Map<String, dynamic>.from(item))
+              .toList();
+          print('✅ Processed categories: ${result.length} categories');
+          return result;
+        } else {
+          print(
+            '⚠️ Categories data is not a List: ${categoriesData.runtimeType}',
+          );
+        }
+      } else {
+        print('❌ API returned success: false - ${data['message']}');
       }
       return [];
     } catch (e) {
-      print('Error fetching categories: $e');
+      print('❌ Error fetching categories: $e');
       return [];
     }
   }
@@ -248,6 +298,11 @@ class ApiService {
     int offset = 0,
   }) async {
     try {
+      print('🔍 Fetching services with offers...');
+      print(
+        '📋 Parameters: categoryId=$categoryId, limit=$limit, offset=$offset',
+      );
+
       final queryParams = <String, String>{
         'limit': limit.toString(),
         'offset': offset.toString(),
@@ -261,20 +316,32 @@ class ApiService {
           .map((e) => '${e.key}=${Uri.encodeComponent(e.value)}')
           .join('&');
 
-      final data = await _makeRequest(
-        'services/get_services_with_offers.php?$queryString',
-      );
+      print('🔗 Request URL: api/services/get_all.php?$queryString');
+
+      final data = await _makeRequest('api/services/get_all.php?$queryString');
+      print('📊 API response: $data');
 
       if (data['success'] == true) {
-        return {
-          'services': data['data'] ?? [],
-          'pagination': data['pagination'] ?? {},
-        };
-      }
+        final servicesData = data['data'];
+        print('📋 Services data: $servicesData');
 
-      return {'services': [], 'pagination': {}};
+        if (servicesData is List) {
+          final result = {
+            'services': servicesData,
+            'pagination': data['pagination'] ?? {},
+          };
+          print('✅ Processed services: ${servicesData.length} services');
+          return result;
+        } else {
+          print('⚠️ Services data is not a List: ${servicesData.runtimeType}');
+          return {'services': [], 'pagination': {}};
+        }
+      } else {
+        print('❌ API returned success: false - ${data['message']}');
+        return {'services': [], 'pagination': {}};
+      }
     } catch (e) {
-      print('Error fetching services with offers: $e');
+      print('❌ Error fetching services with offers: $e');
       return {'services': [], 'pagination': {}};
     }
   }
@@ -332,7 +399,7 @@ class ApiService {
           .join('&');
 
       final data = await _makeRequest(
-        'services/advanced_search.php?$queryString',
+        'api/services/advanced_search.php?$queryString',
       );
 
       if (data['success'] == true) {
@@ -577,7 +644,7 @@ class ApiService {
   // Get active ads for homepage
   static Future<List<AdModel>> getActiveAds() async {
     try {
-      final data = await _makeRequest('ads/get_active_ads.php');
+      final data = await _makeRequest('api/ads/get_active_ads.php');
       if (data['success'] == true) {
         return List<AdModel>.from(
           data['data'].map((item) => AdModel.fromJson(item)),
@@ -839,6 +906,114 @@ class ApiService {
     } catch (e) {
       print('Error deleting account: $e');
       return {'success': false, 'message': e.toString()};
+    }
+  }
+
+  // Login method
+  static Future<Map<String, dynamic>> login({
+    required String email,
+    required String password,
+    String? userType,
+  }) async {
+    try {
+      final data = await _makeRequest(
+        'api/auth/login.php',
+        body: json.encode({
+          'email': email,
+          'password': password,
+          if (userType != null) 'user_type': userType,
+        }),
+        isPost: true,
+      );
+      return data;
+    } catch (e) {
+      print('Error logging in: $e');
+      return {'success': false, 'message': e.toString()};
+    }
+  }
+
+  // Register method
+  static Future<Map<String, dynamic>> register(
+    Map<String, dynamic> userData,
+  ) async {
+    try {
+      final data = await _makeRequest(
+        'api/auth/register.php',
+        body: json.encode(userData),
+        isPost: true,
+      );
+      return data;
+    } catch (e) {
+      print('Error registering: $e');
+      return {'success': false, 'message': e.toString()};
+    }
+  }
+
+  // Verify account method
+  static Future<Map<String, dynamic>> verify({
+    required String email,
+    required String code,
+  }) async {
+    try {
+      final data = await _makeRequest(
+        'api/auth/verify.php',
+        body: json.encode({'email': email, 'code': code}),
+        isPost: true,
+      );
+      return data;
+    } catch (e) {
+      print('Error verifying account: $e');
+      return {'success': false, 'message': e.toString()};
+    }
+  }
+
+  // Forgot password method
+  static Future<Map<String, dynamic>> forgotPassword({
+    required String email,
+  }) async {
+    try {
+      final data = await _makeRequest(
+        'api/auth/forgot_password.php',
+        body: json.encode({'email': email}),
+        isPost: true,
+      );
+      return data;
+    } catch (e) {
+      print('Error forgot password: $e');
+      return {'success': false, 'message': e.toString()};
+    }
+  }
+
+  // Reset password method
+  static Future<Map<String, dynamic>> resetUserPassword({
+    required String email,
+    required String code,
+    required String newPassword,
+  }) async {
+    try {
+      final data = await _makeRequest(
+        'api/auth/reset_password.php',
+        body: json.encode({
+          'email': email,
+          'code': code,
+          'new_password': newPassword,
+        }),
+        isPost: true,
+      );
+      return data;
+    } catch (e) {
+      print('Error resetting password: $e');
+      return {'success': false, 'message': e.toString()};
+    }
+  }
+
+  // Test connection method
+  static Future<Map<String, dynamic>> testConnection() async {
+    try {
+      final data = await _makeRequest('test.php');
+      return {'success': true, 'message': 'اتصال ناجح', 'data': data};
+    } catch (e) {
+      return {'success': false, 'message': 'فشل في الاتصال: $e'};
     }
   }
 }

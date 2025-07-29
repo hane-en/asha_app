@@ -37,18 +37,22 @@ class _PaymentManagementPageState extends State<PaymentManagementPage> {
         setState(() {
           if (refresh) {
             _pendingPayments = List<Map<String, dynamic>>.from(
-              response['data'],
+              response['data'] ?? [],
             );
           } else {
             _pendingPayments.addAll(
-              List<Map<String, dynamic>>.from(response['data']),
+              List<Map<String, dynamic>>.from(response['data'] ?? []),
             );
           }
-          _stats = response['stats'];
+          _stats = response['stats'] ?? {};
           _isLoading = false;
         });
       } else {
-        setState(() => _isLoading = false);
+        setState(() {
+          _pendingPayments = [];
+          _stats = {};
+          _isLoading = false;
+        });
         if (mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
             SnackBar(
@@ -59,7 +63,11 @@ class _PaymentManagementPageState extends State<PaymentManagementPage> {
         }
       }
     } catch (e) {
-      setState(() => _isLoading = false);
+      setState(() {
+        _pendingPayments = [];
+        _stats = {};
+        _isLoading = false;
+      });
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(content: Text('خطأ: $e'), backgroundColor: Colors.red),

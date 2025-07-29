@@ -1,5 +1,7 @@
 class ApiConstants {
-  static const String baseUrl = 'http://192.168.149.247/asha_app_backend';
+  // static const String baseUrl = 'http://192.168.1.3/asha_app_backend';
+  //  static const String baseUrl = 'http://localhost/asha_app_backend';
+  static const String baseUrl = 'http://127.0.0.1/asha_app_tag';
   static const String apiVersion = 'v1';
   
   // Auth endpoints

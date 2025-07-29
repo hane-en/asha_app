@@ -37,10 +37,7 @@ class _ManageServicesState extends State<ManageServices> {
     }
 
     try {
-      final response = await AdminService.getAllServicesDetailed(
-        page: currentPage,
-        limit: perPage,
-      );
+      final response = await AdminService.getAllServicesWithCategories();
 
       if (response['success'] == true) {
         final newServices = List<Map<String, dynamic>>.from(response['data']);
@@ -53,7 +50,7 @@ class _ManageServicesState extends State<ManageServices> {
           }
           stats = response['stats'];
           isLoading = false;
-          hasMoreData = newServices.length == perPage;
+          hasMoreData = false; // لا نحتاج للتحميل التدريجي مع API الجديد
         });
       } else {
         setState(() => isLoading = false);
@@ -165,6 +162,57 @@ class _ManageServicesState extends State<ManageServices> {
             context,
           ).showSnackBar(SnackBar(content: Text('❌ خطأ: $e')));
         }
+      }
+    }
+  }
+
+  Future<void> deleteServiceCategory(
+    int categoryId,
+    String categoryName,
+  ) async {
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('تأكيد حذف فئة الخدمة'),
+        content: Text('هل أنت متأكد من حذف فئة الخدمة "$categoryName"؟'),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(context).pop(false),
+            child: const Text('إلغاء'),
+          ),
+          TextButton(
+            onPressed: () => Navigator.of(context).pop(true),
+            style: TextButton.styleFrom(foregroundColor: Colors.red),
+            child: const Text('حذف'),
+          ),
+        ],
+      ),
+    );
+
+    if (confirmed == true) {
+      try {
+        final success = await AdminService.deleteServiceCategory(categoryId);
+
+        if (success) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text('تم حذف فئة الخدمة "$categoryName" بنجاح'),
+              backgroundColor: Colors.green,
+            ),
+          );
+          loadServices(refresh: true);
+        } else {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+              content: Text('فشل في حذف فئة الخدمة'),
+              backgroundColor: Colors.red,
+            ),
+          );
+        }
+      } catch (e) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('خطأ: $e'), backgroundColor: Colors.red),
+        );
       }
     }
   }
@@ -593,6 +641,9 @@ class _ManageServicesState extends State<ManageServices> {
                                         style: TextStyle(fontSize: 12),
                                       ),
                                     ],
+                                    // عرض فئات الخدمة
+                                    const SizedBox(height: 16),
+                                    _buildServiceCategories(service),
                                   ],
                                 ),
                               ),
@@ -632,6 +683,122 @@ class _ManageServicesState extends State<ManageServices> {
       ),
     ),
   );
+
+  Widget _buildServiceCategories(Map<String, dynamic> service) {
+    final serviceCategories = List<Map<String, dynamic>>.from(
+      service['service_categories'] ?? [],
+    );
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Row(
+          children: [
+            const Icon(Icons.category, size: 16),
+            const SizedBox(width: 8),
+            Text(
+              'فئات الخدمة (${serviceCategories.length})',
+              style: const TextStyle(
+                fontWeight: FontWeight.bold,
+                fontSize: 14,
+              ),
+            ),
+          ],
+        ),
+        const SizedBox(height: 8),
+        if (serviceCategories.isEmpty)
+          Container(
+            padding: const EdgeInsets.all(12),
+            decoration: BoxDecoration(
+              color: Colors.grey[100],
+              borderRadius: BorderRadius.circular(8),
+            ),
+            child: const Text(
+              'لا توجد فئات خدمة',
+              style: TextStyle(color: Colors.grey),
+              textAlign: TextAlign.center,
+            ),
+          )
+        else
+          ...serviceCategories.map((category) => _buildCategoryCard(category)),
+      ],
+    );
+  }
+
+  Widget _buildCategoryCard(Map<String, dynamic> category) {
+    return Card(
+      margin: const EdgeInsets.only(bottom: 8),
+      child: ListTile(
+        leading: category['image'] != null && category['image'].isNotEmpty
+            ? ClipRRect(
+                borderRadius: BorderRadius.circular(8),
+                child: Image.network(
+                  category['image'],
+                  width: 50,
+                  height: 50,
+                  fit: BoxFit.cover,
+                  errorBuilder: (context, error, stackTrace) => Container(
+                    width: 50,
+                    height: 50,
+                    decoration: BoxDecoration(
+                      color: Colors.grey[300],
+                      borderRadius: BorderRadius.circular(8),
+                    ),
+                    child: const Icon(Icons.image),
+                  ),
+                ),
+              )
+            : Container(
+                width: 50,
+                height: 50,
+                decoration: BoxDecoration(
+                  color: Colors.grey[300],
+                  borderRadius: BorderRadius.circular(8),
+                ),
+                child: const Icon(Icons.category),
+              ),
+        title: Text(
+          category['name'] ?? '',
+          style: const TextStyle(fontWeight: FontWeight.bold),
+        ),
+        subtitle: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            if (category['description'] != null && category['description'].isNotEmpty)
+              Text(category['description']),
+            const SizedBox(height: 4),
+            Row(
+              children: [
+                Text(
+                  '${category['price']} ريال',
+                  style: const TextStyle(
+                    color: Colors.green,
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
+                if (category['duration'] != null && category['duration'].isNotEmpty)
+                  Text(' • ${category['duration']}'),
+                if (category['size'] != null && category['size'].isNotEmpty)
+                  Text(' • ${category['size']}'),
+              ],
+            ),
+            if (category['materials'] != null && category['materials'].isNotEmpty)
+              Text(
+                'المواد: ${category['materials']}',
+                style: TextStyle(fontSize: 12, color: Colors.grey[600]),
+              ),
+          ],
+        ),
+        trailing: IconButton(
+          icon: const Icon(Icons.delete, color: Colors.red),
+          onPressed: () => deleteServiceCategory(
+            category['id'],
+            category['name'],
+          ),
+        ),
+      ),
+    );
+  }
 
   Widget _buildActivityStat(String label, int count, Color color) {
     return Container(

@@ -64,4 +64,9 @@ class RouteNames {
   static const String notifications = '/notifications';
   static const String splash = '/splash';
   static const String error = '/error';
+
+  // فئات الخدمة
+  static const String editServiceCategory = '/edit-service-category';
+  static const String serviceCategoryDetails = '/service-category-details';
+  static const String addServiceCategory = '/add-service-category';
 }

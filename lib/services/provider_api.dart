@@ -22,7 +22,7 @@ class ProviderApi {
   }) async {
     try {
       final response = await http.post(
-        Uri.parse('$baseUrl/provider/ads'),
+        Uri.parse('$baseUrl/api/provider/add_ad.php'),
         headers: {
           'Content-Type': 'application/json',
           'Authorization': 'Bearer ${await Helpers.getToken()}',
@@ -58,12 +58,13 @@ class ProviderApi {
   }) async {
     try {
       final response = await http.put(
-        Uri.parse('$baseUrl/provider/ads/$adId'),
+        Uri.parse('$baseUrl/api/provider/update_ad.php'),
         headers: {
           'Content-Type': 'application/json',
           'Authorization': 'Bearer ${await Helpers.getToken()}',
         },
         body: jsonEncode({
+          'ad_id': adId,
           'title': title,
           'description': description,
           'price': price,
@@ -86,7 +87,7 @@ class ProviderApi {
   static Future<bool> deleteAd(String adId) async {
     try {
       final response = await http.delete(
-        Uri.parse('$baseUrl/provider/ads/$adId'),
+        Uri.parse('$baseUrl/api/provider/delete_ad.php'),
         headers: {'Authorization': 'Bearer ${await Helpers.getToken()}'},
       );
 
@@ -100,7 +101,9 @@ class ProviderApi {
   static Future<List<AdModel>> getProviderAds(String providerId) async {
     try {
       final response = await http.get(
-        Uri.parse('$baseUrl/provider/$providerId/ads'),
+        Uri.parse(
+          '$baseUrl/api/provider/get_my_ads.php?provider_id=$providerId',
+        ),
         headers: {'Authorization': 'Bearer ${await Helpers.getToken()}'},
       );
 
@@ -126,7 +129,7 @@ class ProviderApi {
   }) async {
     try {
       final response = await http.post(
-        Uri.parse('$baseUrl/provider/services'),
+        Uri.parse('$baseUrl/api/provider/add_service.php'),
         headers: {
           'Content-Type': 'application/json',
           'Authorization': 'Bearer ${await Helpers.getToken()}',
@@ -162,12 +165,13 @@ class ProviderApi {
   }) async {
     try {
       final response = await http.put(
-        Uri.parse('$baseUrl/provider/services/$serviceId'),
+        Uri.parse('$baseUrl/api/provider/update_service.php'),
         headers: {
           'Content-Type': 'application/json',
           'Authorization': 'Bearer ${await Helpers.getToken()}',
         },
         body: jsonEncode({
+          'service_id': serviceId,
           'title': title,
           'description': description,
           'price': price,
@@ -190,7 +194,9 @@ class ProviderApi {
   static Future<bool> deleteService(String serviceId) async {
     try {
       final response = await http.delete(
-        Uri.parse('$baseUrl/provider/services/$serviceId'),
+        Uri.parse(
+          '$baseUrl/api/provider/delete_service.php?service_id=$serviceId',
+        ),
         headers: {'Authorization': 'Bearer ${await Helpers.getToken()}'},
       );
 
@@ -204,7 +210,9 @@ class ProviderApi {
   static Future<List<Service>> getProviderServices(String providerId) async {
     try {
       final response = await http.get(
-        Uri.parse('$baseUrl/provider/$providerId/services'),
+        Uri.parse(
+          '$baseUrl/api/provider/get_my_services.php?provider_id=$providerId',
+        ),
         headers: {'Authorization': 'Bearer ${await Helpers.getToken()}'},
       );
 
@@ -225,7 +233,9 @@ class ProviderApi {
   ) async {
     try {
       final response = await http.get(
-        Uri.parse('$baseUrl/provider/$providerId/bookings'),
+        Uri.parse(
+          '$baseUrl/api/provider/get_my_bookings.php?provider_id=$providerId',
+        ),
         headers: {'Authorization': 'Bearer ${await Helpers.getToken()}'},
       );
 
@@ -247,12 +257,12 @@ class ProviderApi {
   }) async {
     try {
       final response = await http.put(
-        Uri.parse('$baseUrl/provider/bookings/$bookingId/status'),
+        Uri.parse('$baseUrl/api/bookings/update_booking_status.php'),
         headers: {
           'Content-Type': 'application/json',
           'Authorization': 'Bearer ${await Helpers.getToken()}',
         },
-        body: jsonEncode({'status': status}),
+        body: jsonEncode({'booking_id': bookingId, 'status': status}),
       );
 
       return response.statusCode == 200;
@@ -268,7 +278,7 @@ class ProviderApi {
   }) async {
     try {
       final response = await http.post(
-        Uri.parse('$baseUrl/provider/messages'),
+        Uri.parse('$baseUrl/api/messages/send_message.php'),
         headers: {
           'Content-Type': 'application/json',
           'Authorization': 'Bearer ${await Helpers.getToken()}',
@@ -288,7 +298,9 @@ class ProviderApi {
   ) async {
     try {
       final response = await http.get(
-        Uri.parse('$baseUrl/provider/$providerId/stats'),
+        Uri.parse(
+          '$baseUrl/api/provider/get_stats.php?provider_id=$providerId',
+        ),
         headers: {'Authorization': 'Bearer ${await Helpers.getToken()}'},
       );
 

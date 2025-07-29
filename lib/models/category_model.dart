@@ -25,14 +25,14 @@ class CategoryModel {
 
   factory CategoryModel.fromJson(Map<String, dynamic> json) {
     return CategoryModel(
-      id: json['id'] ?? 0,
-      title: json['title'] ?? '',
+      id: int.tryParse(json['id'].toString()) ?? 0,
+      title: json['name'] ?? json['title'] ?? '', // يدعم name و title
       description: json['description'] ?? '',
       icon: json['icon'] ?? 'category',
       color: json['color'] ?? '#8e24aa',
-      imageUrl: json['image_url'],
-      servicesCount: json['services_count'] ?? 0,
-      isActive: json['is_active'] ?? true,
+      imageUrl: json['image'] ?? json['image_url'], // يدعم image و image_url
+      servicesCount: int.tryParse(json['services_count'].toString()) ?? 0,
+      isActive: json['is_active'] == true || json['is_active'] == 1,
       createdAt: json['created_at'] ?? '',
     );
   }

@@ -69,31 +69,31 @@ class _JoinRequestsPageState extends State<JoinRequestsPage> {
     if (adminNotes == null) return; // User cancelled
 
     try {
-      Map<String, dynamic> response;
+      bool success;
       if (action == 'approve') {
-        response = await AdminService.approveProviderRequest(
+        success = await AdminService.approveProviderRequest(
           requestId,
           adminNotes: adminNotes,
         );
       } else {
-        response = await AdminService.rejectProviderRequest(
+        success = await AdminService.rejectProviderRequest(
           requestId,
           adminNotes: adminNotes,
         );
       }
 
-      if (response['success'] == true) {
+      if (success) {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text(response['message']),
+          const SnackBar(
+            content: Text('تم معالجة الطلب بنجاح'),
             backgroundColor: Colors.green,
           ),
         );
         loadRequests(); // إعادة تحميل الطلبات
       } else {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('خطأ: ${response['message']}'),
+          const SnackBar(
+            content: Text('خطأ في معالجة الطلب'),
             backgroundColor: Colors.red,
           ),
         );

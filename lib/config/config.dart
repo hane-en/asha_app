@@ -2,7 +2,9 @@ import '../utils/helpers.dart';
 
 class Config {
   // API Configuration
-  static const String apiBaseUrl = 'http://192.168.149.247/asha_app_backend';
+  static const String apiBaseUrl = 'http://127.0.0.1/asha_app_tag';
+  // static const String apiBaseUrl = 'http://localhost/asha_app_backend';
+  // static const String apiBaseUrl = 'http://192.168.1.3/asha_app_backend';
   // إذا كنت على جهاز حقيقي، غيّرها إلى: http://192.168.x.x/backend_php/api
 
   // App Configuration

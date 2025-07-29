@@ -1,4 +1,5 @@
 import 'package:json_annotation/json_annotation.dart';
+import 'dart:convert'; // Added for json.decode
 
 @JsonSerializable()
 class Service {
@@ -97,42 +98,78 @@ class Service {
   });
 
   factory Service.fromJson(Map<String, dynamic> json) => Service(
-    id: json['id'] as int,
-    providerId: json['provider_id'] as int,
-    categoryId: json['category_id'] as int,
-    title: json['title'] as String,
-    description: json['description'] as String,
-    price: (json['price'] as num).toDouble(),
+    id: int.tryParse(json['id'].toString()) ?? 0,
+    providerId: int.tryParse(json['provider_id'].toString()) ?? 0,
+    categoryId: int.tryParse(json['category_id'].toString()) ?? 0,
+    title: json['title'] ?? '',
+    description: json['description'] ?? '',
+    price: (json['price'] as num?)?.toDouble() ?? 0.0,
     originalPrice: (json['original_price'] as num?)?.toDouble(),
-    duration: json['duration'] as int,
-    images: (json['images'] as List<dynamic>).map((e) => e as String).toList(),
-    isActive: json['is_active'] as bool,
-    isVerified: json['is_verified'] as bool,
-    isFeatured: json['is_featured'] as bool,
-    rating: (json['rating'] as num).toDouble(),
-    totalRatings: json['total_ratings'] as int,
-    bookingCount: json['booking_count'] as int,
-    favoriteCount: json['favorite_count'] as int,
-    specifications: json['specifications'] as Map<String, dynamic>?,
-    tags: (json['tags'] as List<dynamic>).map((e) => e as String).toList(),
-    location: json['location'] as String,
+    duration: int.tryParse(json['duration'].toString()) ?? 0,
+    images: _parseJsonList(json['images']),
+    isActive: json['is_active'] == true || json['is_active'] == 1,
+    isVerified: json['is_verified'] == true || json['is_verified'] == 1,
+    isFeatured: json['is_featured'] == true || json['is_featured'] == 1,
+    rating: (json['rating'] as num?)?.toDouble() ?? 0.0,
+    totalRatings: int.tryParse(json['total_ratings'].toString()) ?? 0,
+    bookingCount: int.tryParse(json['booking_count'].toString()) ?? 0,
+    favoriteCount: int.tryParse(json['favorite_count'].toString()) ?? 0,
+    specifications: _parseJsonMap(json['specifications']),
+    tags: _parseJsonList(json['tags']),
+    location: json['location'] ?? '',
     latitude: (json['latitude'] as num?)?.toDouble(),
     longitude: (json['longitude'] as num?)?.toDouble(),
-    address: json['address'] as String,
-    city: json['city'] as String,
-    maxGuests: json['max_guests'] as int?,
-    cancellationPolicy: json['cancellation_policy'] as String?,
-    depositRequired: json['deposit_required'] as bool,
+    address: json['address'] ?? '',
+    city: json['city'] ?? '',
+    maxGuests: json['max_guests'] != null
+        ? int.tryParse(json['max_guests'].toString())
+        : null,
+    cancellationPolicy: json['cancellation_policy'],
+    depositRequired:
+        json['deposit_required'] == true || json['deposit_required'] == 1,
     depositAmount: (json['deposit_amount'] as num?)?.toDouble(),
-    paymentTerms: json['payment_terms'] as Map<String, dynamic>?,
-    availability: json['availability'] as Map<String, dynamic>?,
-    createdAt: json['created_at'] as String,
-    updatedAt: json['updated_at'] as String,
-    categoryName: json['category_name'] as String?,
-    providerName: json['provider_name'] as String?,
+    paymentTerms: _parseJsonMap(json['payment_terms']),
+    availability: _parseJsonMap(json['availability']),
+    createdAt: json['created_at'] ?? '',
+    updatedAt: json['updated_at'] ?? '',
+    categoryName: json['category_name'],
+    providerName: json['provider_name'],
     providerRating: (json['provider_rating'] as num?)?.toDouble(),
-    providerImage: json['provider_image'] as String?,
+    providerImage: json['provider_image'],
   );
+
+  // Helper method to parse JSON strings or lists
+  static List<String> _parseJsonList(dynamic value) {
+    if (value == null) return [];
+    if (value is List) {
+      return value.map((e) => e.toString()).toList();
+    }
+    if (value is String) {
+      try {
+        final decoded = json.decode(value) as List;
+        return decoded.map((e) => e.toString()).toList();
+      } catch (e) {
+        return [];
+      }
+    }
+    return [];
+  }
+
+  // Helper method to parse JSON strings or maps
+  static Map<String, dynamic>? _parseJsonMap(dynamic value) {
+    if (value == null) return null;
+    if (value is Map<String, dynamic>) {
+      return value;
+    }
+    if (value is String) {
+      try {
+        return json.decode(value) as Map<String, dynamic>;
+      } catch (e) {
+        return null;
+      }
+    }
+    return null;
+  }
 
   Map<String, dynamic> toJson() => <String, dynamic>{
     'id': id,

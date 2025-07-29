@@ -18,6 +18,7 @@ class ServicesService {
     String? sortOrder,
   }) async {
     try {
+      print('🔍 Loading services...');
       final queryParams = <String, String>{
         'page': page.toString(),
         'limit': limit.toString(),
@@ -25,41 +26,72 @@ class ServicesService {
 
       if (categoryId != null) queryParams['category_id'] = categoryId;
       if (search != null) queryParams['search'] = search;
-      if (location != null) queryParams['location'] = location;
+      if (location != null)
+        queryParams['city'] = location; // تغيير من location إلى city
       if (minPrice != null) queryParams['min_price'] = minPrice.toString();
       if (maxPrice != null) queryParams['max_price'] = maxPrice.toString();
       if (sortBy != null) queryParams['sort_by'] = sortBy;
       if (sortOrder != null) queryParams['sort_order'] = sortOrder;
 
-      final uri = Uri.parse(
-        '$baseUrl/services',
-      ).replace(queryParameters: queryParams);
+      final queryString = queryParams.entries
+          .map((e) => '${e.key}=${Uri.encodeComponent(e.value)}')
+          .join('&');
+
+      final uri = Uri.parse('$baseUrl/api/services/get_all.php?$queryString');
+      print('📡 Request URL: $uri');
 
       final response = await http.get(uri);
 
+      print('📊 Response status: ${response.statusCode}');
+      print('📋 Response body: ${response.body}');
+
       if (response.statusCode == 200) {
         final data = json.decode(response.body);
-        return {'success': true, 'data': data};
+        print('✅ Services data: $data');
+
+        // التأكد من أن البيانات في الشكل الصحيح
+        if (data['success'] == true) {
+          return {'success': true, 'data': data['data'] ?? data};
+        } else {
+          print('❌ API returned success: false');
+          return {
+            'success': false,
+            'message': data['message'] ?? 'فشل في تحميل الخدمات',
+          };
+        }
       } else {
+        print('❌ HTTP Error: ${response.statusCode}');
         return {'success': false, 'message': 'فشل في تحميل الخدمات'};
       }
     } catch (e) {
+      print('❌ Error loading services: $e');
       return {'success': false, 'message': e.toString()};
     }
   }
 
   Future<Map<String, dynamic>> getServiceById(int serviceId) async {
     try {
-      final uri = Uri.parse('$baseUrl/services/$serviceId');
+      print('🔍 Loading service by ID: $serviceId');
+      final uri = Uri.parse(
+        '$baseUrl/api/services/get_by_id.php?id=$serviceId',
+      );
+      print('📡 Request URL: $uri');
+
       final response = await http.get(uri);
+
+      print('📊 Response status: ${response.statusCode}');
+      print('📋 Response body: ${response.body}');
 
       if (response.statusCode == 200) {
         final data = json.decode(response.body);
+        print('✅ Service data: $data');
         return {'success': true, 'data': data};
       } else {
+        print('❌ HTTP Error: ${response.statusCode}');
         return {'success': false, 'message': 'فشل في تحميل تفاصيل الخدمة'};
       }
     } catch (e) {
+      print('❌ Error loading service: $e');
       return {'success': false, 'message': e.toString()};
     }
   }
@@ -70,24 +102,35 @@ class ServicesService {
     int limit = 20,
   }) async {
     try {
+      print('🔍 Loading services by category: $categoryId');
       final queryParams = <String, String>{
         'page': page.toString(),
         'limit': limit.toString(),
+        'category_id': categoryId.toString(),
       };
 
-      final uri = Uri.parse(
-        '$baseUrl/categories/$categoryId/services',
-      ).replace(queryParameters: queryParams);
+      final queryString = queryParams.entries
+          .map((e) => '${e.key}=${Uri.encodeComponent(e.value)}')
+          .join('&');
+
+      final uri = Uri.parse('$baseUrl/api/services/get_all.php?$queryString');
+      print('📡 Request URL: $uri');
 
       final response = await http.get(uri);
 
+      print('📊 Response status: ${response.statusCode}');
+      print('📋 Response body: ${response.body}');
+
       if (response.statusCode == 200) {
         final data = json.decode(response.body);
+        print('✅ Category services data: $data');
         return {'success': true, 'data': data};
       } else {
+        print('❌ HTTP Error: ${response.statusCode}');
         return {'success': false, 'message': 'فشل في تحميل خدمات الفئة'};
       }
     } catch (e) {
+      print('❌ Error loading category services: $e');
       return {'success': false, 'message': e.toString()};
     }
   }

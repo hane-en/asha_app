@@ -1,23 +1,18 @@
 import 'package:flutter/material.dart';
-import '../../services/api_service.dart';
-import '../../widgets/service_card.dart';
-import '../../models/service_model.dart';
-import '../../routes/route_names.dart';
-import '../../routes/route_arguments.dart';
+import 'package:asha_application/services/api_service.dart';
+import 'package:asha_application/routes/app_routes.dart';
 import 'package:shared_preferences/shared_preferences.dart';
-import 'details_page.dart';
-import '../../routes/app_routes.dart';
 
 class FavoritesPage extends StatefulWidget {
-  const FavoritesPage({super.key, required this.userId});
-  final int userId;
+  const FavoritesPage({Key? key}) : super(key: key);
 
   @override
-  _FavoritesPageState createState() => _FavoritesPageState();
+  State<FavoritesPage> createState() => _FavoritesPageState();
 }
 
 class _FavoritesPageState extends State<FavoritesPage> {
-  List<Map<String, dynamic>> favoriteServices = [];
+  List<Map<String, dynamic>> _favorites = [];
+  bool _isLoading = true;
 
   @override
   void initState() {
@@ -26,55 +21,78 @@ class _FavoritesPageState extends State<FavoritesPage> {
   }
 
   Future<void> loadFavorites() async {
+    setState(() => _isLoading = true);
     try {
       final prefs = await SharedPreferences.getInstance();
       final userId = prefs.getInt('user_id');
 
       if (userId != null) {
-        // المستخدم مسجل دخول - جلب المفضلة من الخادم
-        final results = await ApiService.getFavorites(userId);
+        // المستخدم مسجل دخول - جلب من API
+        final favorites = await ApiService.getFavorites(userId);
         setState(() {
-          favoriteServices = results;
+          _favorites = favorites;
+          _isLoading = false;
         });
       } else {
-        // المستخدم غير مسجل دخول - عرض المفضلة المحلية
+        // المستخدم غير مسجل دخول - جلب من التخزين المحلي
         final localFavorites = prefs.getStringList('local_favorites') ?? [];
+        final allServices = await ApiService.getAllServices();
 
-        if (localFavorites.isNotEmpty) {
-          // هنا يمكنك تحميل تفاصيل الخدمات المحلية
-          // للتبسيط، سنعرض رسالة للمستخدم
-          setState(() {
-            favoriteServices = [];
-          });
+        final localFavoritesList = allServices
+            .where((service) => localFavorites.contains(service.id.toString()))
+            .map((service) => service.toJson())
+            .toList();
 
-          ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(
-              content: Text('يتم عرض المفضلة المحلية'),
-              backgroundColor: Colors.orange,
-            ),
-          );
-        } else {
-          setState(() {
-            favoriteServices = [];
-          });
-        }
+        setState(() {
+          _favorites = localFavoritesList;
+          _isLoading = false;
+        });
       }
     } catch (e) {
       setState(() {
-        favoriteServices = [];
+        _favorites = [];
+        _isLoading = false;
       });
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('حدث خطأ: $e'), backgroundColor: Colors.red),
+      );
     }
   }
 
   Future<void> remove(int serviceId) async {
-    final success = await ApiService.removeFavorite(widget.userId, serviceId);
-    if (success) {
-      setState(() {
-        favoriteServices.removeWhere((s) => s['id'] == serviceId);
-      });
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      final userId = prefs.getInt('user_id');
+
+      if (userId != null) {
+        // المستخدم مسجل دخول - حذف من الخادم
+        final success = await ApiService.removeFavorite(userId, serviceId);
+        if (success) {
+          setState(() {
+            _favorites.removeWhere((s) => s['id'] == serviceId);
+          });
+          ScaffoldMessenger.of(
+            context,
+          ).showSnackBar(const SnackBar(content: Text('تم الحذف من المفضلة')));
+        }
+      } else {
+        // المستخدم غير مسجل دخول - حذف من التخزين المحلي
+        final localFavorites = prefs.getStringList('local_favorites') ?? [];
+        localFavorites.remove(serviceId.toString());
+        await prefs.setStringList('local_favorites', localFavorites);
+
+        setState(() {
+          _favorites.removeWhere((s) => s['id'] == serviceId);
+        });
+
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(const SnackBar(content: Text('تم الحذف من المفضلة')));
+      }
+    } catch (e) {
       ScaffoldMessenger.of(
         context,
-      ).showSnackBar(const SnackBar(content: Text('تم الحذف من المفضلة')));
+      ).showSnackBar(SnackBar(content: Text('حدث خطأ: $e')));
     }
   }
 
@@ -86,160 +104,105 @@ class _FavoritesPageState extends State<FavoritesPage> {
     );
   }
 
+  Future<void> _logout() async {
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.clear();
+    Navigator.pushReplacementNamed(context, '/login');
+  }
+
   @override
-  Widget build(BuildContext context) => WillPopScope(
-    onWillPop: () async {
-      Navigator.pushNamedAndRemoveUntil(
-        context,
-        RouteNames.userHome,
-        (route) => false,
-      );
-      return false;
-    },
-    child: SafeArea(
-      child: Scaffold(
-        appBar: AppBar(
-          title: const Text('المفضلة'),
-          backgroundColor: Colors.purple,
-          foregroundColor: Colors.white,
-          elevation: 0,
-          leading: IconButton(
-            icon: const Icon(Icons.arrow_back),
-            onPressed: () =>
-                Navigator.pushReplacementNamed(context, RouteNames.userHome),
-          ),
+  Widget build(BuildContext context) {
+    return Scaffold(
+      appBar: AppBar(
+        title: const Text('المفضلة'),
+        backgroundColor: Colors.purple,
+        foregroundColor: Colors.white,
+        leading: IconButton(
+          icon: const Icon(Icons.arrow_back),
+          onPressed: () {
+            Navigator.pushReplacementNamed(context, '/user_home');
+          },
         ),
-        body: favoriteServices.isEmpty
-            ? const Center(
-                child: Column(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: [
-                    Icon(Icons.favorite_border, size: 64, color: Colors.grey),
-                    SizedBox(height: 16),
-                    Text(
-                      'لا توجد خدمات مفضلة',
-                      style: TextStyle(fontSize: 18, color: Colors.grey),
+      ),
+      body: _isLoading
+          ? const Center(child: CircularProgressIndicator())
+          : _favorites.isEmpty
+          ? const Center(
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  Icon(Icons.favorite_border, size: 80, color: Colors.grey),
+                  SizedBox(height: 16),
+                  Text(
+                    'لا توجد خدمات في المفضلة',
+                    style: TextStyle(fontSize: 18, color: Colors.grey),
+                  ),
+                ],
+              ),
+            )
+          : ListView.builder(
+              itemCount: _favorites.length,
+              itemBuilder: (context, index) {
+                final service = _favorites[index];
+                return Card(
+                  margin: const EdgeInsets.all(8),
+                  child: ListTile(
+                    leading:
+                        service['images'] != null &&
+                            (service['images'] as List).isNotEmpty
+                        ? ClipRRect(
+                            borderRadius: BorderRadius.circular(8),
+                            child: Image.network(
+                              'http://127.0.0.1/asha_app_backend/uploads/${service['images'][0]}',
+                              width: 60,
+                              height: 60,
+                              fit: BoxFit.cover,
+                              errorBuilder: (context, error, stackTrace) {
+                                return Container(
+                                  width: 60,
+                                  height: 60,
+                                  color: Colors.grey[300],
+                                  child: const Icon(Icons.image),
+                                );
+                              },
+                            ),
+                          )
+                        : Container(
+                            width: 60,
+                            height: 60,
+                            color: Colors.grey[300],
+                            child: const Icon(Icons.image),
+                          ),
+                    title: Text(service['title'] ?? 'عنوان الخدمة'),
+                    subtitle: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(service['description'] ?? 'وصف الخدمة'),
+                        const SizedBox(height: 4),
+                        Text(
+                          '${service['price'] ?? 0} ريال',
+                          style: const TextStyle(
+                            fontWeight: FontWeight.bold,
+                            color: Colors.purple,
+                          ),
+                        ),
+                      ],
                     ),
-                    SizedBox(height: 8),
-                    Text(
-                      'أضف خدماتك المفضلة لتجدها هنا',
-                      style: TextStyle(fontSize: 14, color: Colors.grey),
+                    trailing: IconButton(
+                      icon: const Icon(Icons.delete, color: Colors.red),
+                      onPressed: () => remove(service['id']),
                     ),
-                  ],
-                ),
-              )
-            : ListView.builder(
-                padding: const EdgeInsets.all(16),
-                itemCount: favoriteServices.length,
-                itemBuilder: (context, index) {
-                  final service = favoriteServices[index];
-                  // تحويل البيانات إلى Service
-                  final serviceModel = Service(
-                    id: service['id'] ?? 0,
-                    providerId: service['provider_id'] ?? 0,
-                    categoryId: service['category_id'] ?? 0,
-                    title: service['name'] ?? '',
-                    description: service['description'] ?? '',
-                    price: (service['price'] ?? 0.0).toDouble(),
-                    originalPrice: service['original_price'] != null
-                        ? (service['original_price'] as num).toDouble()
-                        : null,
-                    duration: service['duration'] ?? 0,
-                    images: service['images'] != null
-                        ? List<String>.from(service['images'])
-                        : [],
-                    isActive: service['is_active'] ?? true,
-                    isVerified: service['is_verified'] ?? false,
-                    isFeatured: service['is_featured'] ?? false,
-                    rating: (service['rating'] ?? 0.0).toDouble(),
-                    totalRatings: service['total_ratings'] ?? 0,
-                    bookingCount: service['booking_count'] ?? 0,
-                    favoriteCount: service['favorite_count'] ?? 0,
-                    specifications: service['specifications'],
-                    tags: service['tags'] != null
-                        ? List<String>.from(service['tags'])
-                        : [],
-                    location: service['location'] ?? '',
-                    latitude: service['latitude'] != null
-                        ? (service['latitude'] as num).toDouble()
-                        : null,
-                    longitude: service['longitude'] != null
-                        ? (service['longitude'] as num).toDouble()
-                        : null,
-                    address: service['address'] ?? '',
-                    city: service['city'] ?? '',
-                    maxGuests: service['max_guests'],
-                    cancellationPolicy: service['cancellation_policy'],
-                    depositRequired: service['deposit_required'] ?? false,
-                    depositAmount: service['deposit_amount'] != null
-                        ? (service['deposit_amount'] as num).toDouble()
-                        : null,
-                    paymentTerms: service['payment_terms'],
-                    availability: service['availability'],
-                    createdAt: service['created_at'] ?? '',
-                    updatedAt: service['updated_at'] ?? '',
-                    categoryName: service['category_name'],
-                    providerName: service['provider_name'],
-                    providerRating: service['provider_rating'] != null
-                        ? (service['provider_rating'] as num).toDouble()
-                        : null,
-                    providerImage: service['provider_image'],
-                  );
-                  return ServiceCard(
-                    service: serviceModel,
                     onTap: () {
                       Navigator.pushNamed(
                         context,
-                        '/service_details',
-                        arguments: {
-                          'name': serviceModel.title,
-                          'description': serviceModel.description,
-                          'image': serviceModel.images.isNotEmpty
-                              ? serviceModel.images.first
-                              : '',
-                          'price': serviceModel.price,
-                          'provider_name': serviceModel.providerName ?? '',
-                        },
+                        '/details',
+                        arguments: service,
                       );
                     },
-                    onCall:
-                        null, // حذف زر الاتصال لأنه يعتمد على خاصية غير موجودة
-                  );
-                },
-              ),
-        bottomNavigationBar: BottomNavigationBar(
-          type: BottomNavigationBarType.fixed,
-          currentIndex: 2,
-          selectedItemColor: Colors.purple,
-          unselectedItemColor: Colors.grey,
-          onTap: (index) {
-            if (index == 2) return; // بالفعل في صفحة المفضلة
-            switch (index) {
-              case 0:
-                Navigator.pushReplacementNamed(context, RouteNames.userHome);
-                break;
-              case 1:
-                Navigator.pushReplacementNamed(
-                  context,
-                  RouteNames.serviceSearch,
+                  ),
                 );
-                break;
-              case 3:
-                _navigateToBookings();
-                break;
-            }
-          },
-          items: const [
-            BottomNavigationBarItem(icon: Icon(Icons.home), label: 'الرئيسية'),
-            BottomNavigationBarItem(icon: Icon(Icons.search), label: 'بحث'),
-            BottomNavigationBarItem(
-              icon: Icon(Icons.favorite),
-              label: 'المفضلة',
+              },
             ),
-            BottomNavigationBarItem(icon: Icon(Icons.event), label: 'الطلبات'),
-          ],
-        ),
-      ),
-    ),
-  );
+    );
+  }
 }

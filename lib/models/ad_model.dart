@@ -16,13 +16,13 @@ class AdModel {
   });
 
   factory AdModel.fromJson(Map<String, dynamic> json) => AdModel(
-    id: json['id'] ?? 0,
+    id: int.tryParse(json['id'].toString()) ?? 0,
     title: json['title'] ?? '',
     description: json['description'] ?? '',
     image: json['image'] ?? '',
     link: json['link'],
-    isActive: json['is_active'] ?? true,
-    priority: json['priority'] ?? 0,
+    isActive: json['is_active'] == true || json['is_active'] == 1,
+    priority: int.tryParse(json['priority'].toString()) ?? 0,
     startDate: json['start_date'] != null
         ? DateTime.tryParse(json['start_date'])
         : null,
@@ -36,7 +36,9 @@ class AdModel {
         ? DateTime.tryParse(json['updated_at'])
         : null,
     providerName: json['provider_name'],
-    providerId: json['provider_id'],
+    providerId: json['provider_id'] != null
+        ? int.tryParse(json['provider_id'].toString())
+        : null,
   );
   final int id;
   final String title;
@@ -98,6 +100,14 @@ class AdModel {
     providerId: providerId ?? this.providerId,
   );
 
+  bool get isValid => id != 0 && title.isNotEmpty && image.isNotEmpty;
+  bool get hasLink => link != null && link!.isNotEmpty;
+
+  @override
+  String toString() {
+    return 'AdModel(id: $id, title: $title, isActive: $isActive)';
+  }
+
   @override
   bool operator ==(Object other) {
     if (identical(this, other)) return true;
@@ -106,17 +116,4 @@ class AdModel {
 
   @override
   int get hashCode => id.hashCode;
-
-  @override
-  String toString() => 'AdModel(id: $id, title: $title, isActive: $isActive)';
-
-  bool get isValid {
-    if (!isActive) return false;
-    final now = DateTime.now();
-    if (startDate != null && now.isBefore(startDate!)) return false;
-    if (endDate != null && now.isAfter(endDate!)) return false;
-    return true;
-  }
-
-  bool get hasLink => link != null && link!.isNotEmpty;
 }

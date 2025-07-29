@@ -25,25 +25,35 @@ class _ManageReviewsState extends State<ManageReviews> {
   Future<void> loadReviews() async {
     setState(() => isLoading = true);
     try {
-      final result = await AdminService.getAllReviews();
+      final result = await AdminService.getAllReviewsDetailed();
       if (result['success'] == true) {
         setState(() {
-          categories = List<Map<String, dynamic>>.from(result['data']);
+          categories = List<Map<String, dynamic>>.from(result['data'] ?? []);
           stats = result['stats'] ?? {};
           isLoading = false;
         });
       } else {
-        setState(() => isLoading = false);
+        setState(() {
+          categories = [];
+          stats = {};
+          isLoading = false;
+        });
         if (mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
             SnackBar(
-              content: Text('خطأ في تحميل التعليقات: ${result['message']}'),
+              content: Text(
+                'خطأ في تحميل التعليقات: ${result['message'] ?? 'خطأ غير معروف'}',
+              ),
             ),
           );
         }
       }
     } catch (e) {
-      setState(() => isLoading = false);
+      setState(() {
+        categories = [];
+        stats = {};
+        isLoading = false;
+      });
       if (mounted) {
         ScaffoldMessenger.of(
           context,

@@ -347,4 +347,21 @@ class ProviderService {
       return [];
     }
   }
+
+  // جلب خدمات المزود مع فئاتها
+  static Future<List<Map<String, dynamic>>>
+  getMyServicesWithCategories() async {
+    try {
+      final data = await _makeRequest(
+        'provider/get_my_services_with_categories.php',
+      );
+      if (data['success'] == true) {
+        return List<Map<String, dynamic>>.from(data['data'] ?? []);
+      }
+      return [];
+    } catch (e) {
+      print('Error getting provider services with categories: $e');
+      return [];
+    }
+  }
 }

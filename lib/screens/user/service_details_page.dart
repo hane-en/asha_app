@@ -1,383 +1,402 @@
 import 'package:flutter/material.dart';
-import '../../services/api_service.dart';
-import 'package:shared_preferences/shared_preferences.dart';
-import '../../routes/app_routes.dart';
+import 'package:cached_network_image/cached_network_image.dart';
+import '../../models/service_model.dart';
+import '../../models/service_category_model.dart';
+import '../../services/service_category_service.dart';
+import '../../widgets/service_category_card.dart';
+import '../../utils/helpers.dart';
 
 class ServiceDetailsPage extends StatefulWidget {
-  const ServiceDetailsPage({
-    super.key,
-    required this.userId,
-    required this.serviceId,
-    required this.serviceTitle,
-    required this.serviceImage,
-  });
-  final int userId;
-  final int serviceId;
-  final String serviceTitle;
-  final String serviceImage;
+  final Service service;
+
+  const ServiceDetailsPage({Key? key, required this.service}) : super(key: key);
 
   @override
-  _ServiceDetailsPageState createState() => _ServiceDetailsPageState();
+  State<ServiceDetailsPage> createState() => _ServiceDetailsPageState();
 }
 
 class _ServiceDetailsPageState extends State<ServiceDetailsPage> {
-  bool isFavorite = false;
-  bool isLoading = true;
-  Map<String, dynamic>? _serviceDetails;
-  List<Map<String, dynamic>> _reviews = [];
-  Map<String, dynamic>? _ratingStats;
+  List<ServiceCategory> _categories = [];
+  Map<String, dynamic>? _serviceInfo;
+  bool _isLoading = true;
+  String? _errorMessage;
 
   @override
   void initState() {
     super.initState();
-    _loadServiceDetails();
+    _loadServiceCategories();
   }
 
-  Future<void> _loadServiceDetails() async {
+  Future<void> _loadServiceCategories() async {
     try {
-      // جلب تفاصيل الخدمة والتعليقات
-      final response = await ApiService.getServiceDetails(widget.serviceId);
+      setState(() {
+        _isLoading = true;
+        _errorMessage = null;
+      });
 
-      if (response['success'] == true) {
+      final response = await ServiceCategoryService.getServiceCategories(
+        widget.service.id,
+      );
+
+      if (response.success) {
         setState(() {
-          _serviceDetails = response['data']['service'];
-          _reviews = List<Map<String, dynamic>>.from(
-            response['data']['reviews'],
-          );
-          _ratingStats = response['data']['rating_stats'];
+          _categories = response.data;
+          _serviceInfo = response.serviceInfo;
+          _isLoading = false;
+        });
+      } else {
+        setState(() {
+          _errorMessage = response.message;
+          _isLoading = false;
         });
       }
-
-      // التحقق من حالة المفضلة
-      final favorites = await ApiService.getFavorites(widget.userId);
-      setState(() {
-        isFavorite = favorites.any((s) => s['id'] == widget.serviceId);
-        isLoading = false;
-      });
     } catch (e) {
-      setState(() => isLoading = false);
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('خطأ في تحميل تفاصيل الخدمة: $e'),
-            backgroundColor: Colors.red,
-          ),
-        );
-      }
-    }
-  }
-
-  Future<void> toggleFavorite() async {
-    bool success;
-    if (isFavorite) {
-      success = await ApiService.removeFavorite(
-        widget.userId,
-        widget.serviceId,
-      );
-    } else {
-      success = await ApiService.addToFavorites(
-        widget.userId,
-        widget.serviceId,
-      );
-    }
-
-    if (success) {
       setState(() {
-        isFavorite = !isFavorite;
+        _errorMessage = 'خطأ في تحميل فئات الخدمة: $e';
+        _isLoading = false;
       });
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text(
-            isFavorite ? '✅ أُضيفت إلى المفضلة' : '🗑️ تم الحذف من المفضلة',
-          ),
-        ),
-      );
-    }
-  }
-
-  void bookService() {
-    // يمكنك ربط الحجز بقاعدة بيانات لاحقًا
-    ScaffoldMessenger.of(
-      context,
-    ).showSnackBar(const SnackBar(content: Text('✅ تم إرسال طلب الحجز')));
-  }
-
-  Future<void> _onBookPressed() async {
-    final prefs = await SharedPreferences.getInstance();
-    final userId = prefs.getInt('user_id');
-    if (userId == null) {
-      Navigator.pushNamed(context, AppRoutes.login);
-    } else {
-      // أكمل عملية الحجز هنا
-      bookService();
     }
   }
 
   @override
-  Widget build(BuildContext context) => SafeArea(
-    child: Scaffold(
+  Widget build(BuildContext context) {
+    return Scaffold(
       appBar: AppBar(
-        title: Text(widget.serviceTitle),
-        backgroundColor: Colors.purple,
-        foregroundColor: Colors.white,
+        title: Text(
+          widget.service.title,
+          style: const TextStyle(
+            color: Colors.white,
+            fontWeight: FontWeight.bold,
+          ),
+        ),
+        backgroundColor: Colors.blue,
+        elevation: 0,
+        iconTheme: const IconThemeData(color: Colors.white),
       ),
-      body: isLoading
+      body: _isLoading
           ? const Center(child: CircularProgressIndicator())
-          : SingleChildScrollView(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  // صورة الخدمة
-                  Image.network(
-                    widget.serviceImage,
-                    height: 250,
-                    width: double.infinity,
-                    fit: BoxFit.cover,
-                  ),
+          : _errorMessage != null
+          ? _buildErrorWidget()
+          : _buildContent(),
+    );
+  }
 
-                  Padding(
-                    padding: const EdgeInsets.all(16),
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        // عنوان الخدمة
-                        Text(
-                          widget.serviceTitle,
-                          style: const TextStyle(
-                            fontSize: 24,
-                            fontWeight: FontWeight.bold,
-                          ),
-                        ),
-
-                        const SizedBox(height: 8),
-
-                        // تفاصيل الخدمة
-                        if (_serviceDetails != null) ...[
-                          Text(
-                            'المزود: ${_serviceDetails!['provider_name'] ?? 'غير محدد'}',
-                            style: const TextStyle(
-                              fontSize: 16,
-                              color: Colors.grey,
-                            ),
-                          ),
-                          const SizedBox(height: 4),
-                          Text(
-                            'الفئة: ${_serviceDetails!['category_name'] ?? 'غير محدد'}',
-                            style: const TextStyle(
-                              fontSize: 16,
-                              color: Colors.grey,
-                            ),
-                          ),
-                          const SizedBox(height: 4),
-                          Text(
-                            'السعر: ${_serviceDetails!['price']} ريال',
-                            style: const TextStyle(
-                              fontSize: 18,
-                              fontWeight: FontWeight.bold,
-                              color: Colors.purple,
-                            ),
-                          ),
-                        ],
-
-                        const SizedBox(height: 16),
-
-                        // التقييمات
-                        if (_ratingStats != null &&
-                            _ratingStats!['total_reviews'] > 0) ...[
-                          Row(
-                            children: [
-                              ...List.generate(
-                                5,
-                                (index) => Icon(
-                                  index <
-                                          (_ratingStats!['avg_rating']
-                                                  as double)
-                                              .floor()
-                                      ? Icons.star
-                                      : Icons.star_border,
-                                  size: 20,
-                                  color: Colors.amber,
-                                ),
-                              ),
-                              const SizedBox(width: 8),
-                              Text(
-                                '${_ratingStats!['avg_rating']} (${_ratingStats!['total_reviews']} تقييم)',
-                                style: const TextStyle(
-                                  fontSize: 16,
-                                  fontWeight: FontWeight.bold,
-                                ),
-                              ),
-                            ],
-                          ),
-                          const SizedBox(height: 16),
-                        ],
-
-                        // أزرار الإجراءات
-                        Row(
-                          children: [
-                            Expanded(
-                              child: ElevatedButton.icon(
-                                onPressed: toggleFavorite,
-                                icon: Icon(
-                                  isFavorite
-                                      ? Icons.favorite
-                                      : Icons.favorite_border,
-                                  color: Colors.white,
-                                ),
-                                label: Text(
-                                  isFavorite
-                                      ? 'إزالة من المفضلة'
-                                      : 'إضافة إلى المفضلة',
-                                  style: const TextStyle(color: Colors.white),
-                                ),
-                                style: ElevatedButton.styleFrom(
-                                  backgroundColor: isFavorite
-                                      ? Colors.grey
-                                      : Colors.red,
-                                ),
-                              ),
-                            ),
-                            const SizedBox(width: 12),
-                            Expanded(
-                              child: ElevatedButton(
-                                onPressed: _onBookPressed,
-                                style: ElevatedButton.styleFrom(
-                                  backgroundColor: Colors.purple,
-                                  foregroundColor: Colors.white,
-                                ),
-                                child: const Text('احجز الآن'),
-                              ),
-                            ),
-                          ],
-                        ),
-
-                        const SizedBox(height: 24),
-
-                        // قسم التعليقات
-                        if (_reviews.isNotEmpty) ...[
-                          const Text(
-                            'التعليقات والتقييمات',
-                            style: TextStyle(
-                              fontSize: 20,
-                              fontWeight: FontWeight.bold,
-                            ),
-                          ),
-                          const SizedBox(height: 12),
-                          ..._reviews
-                              .map((review) => _buildReviewCard(review))
-                              .toList(),
-                        ] else ...[
-                          const Text(
-                            'لا توجد تعليقات لهذه الخدمة بعد',
-                            style: TextStyle(fontSize: 16, color: Colors.grey),
-                            textAlign: TextAlign.center,
-                          ),
-                        ],
-                      ],
-                    ),
-                  ),
-                ],
-              ),
-            ),
-    ),
-  );
-
-  Widget _buildReviewCard(Map<String, dynamic> review) {
-    return Container(
-      margin: const EdgeInsets.only(bottom: 12),
-      padding: const EdgeInsets.all(12),
-      decoration: BoxDecoration(
-        color: Colors.grey[50],
-        borderRadius: BorderRadius.circular(8),
-        border: Border.all(color: Colors.grey[300]!),
+  Widget _buildErrorWidget() {
+    return Center(
+      child: Column(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          Icon(Icons.error_outline, size: 64, color: Colors.grey[400]),
+          const SizedBox(height: 16),
+          Text(
+            _errorMessage!,
+            textAlign: TextAlign.center,
+            style: TextStyle(fontSize: 16, color: Colors.grey[600]),
+          ),
+          const SizedBox(height: 16),
+          ElevatedButton(
+            onPressed: _loadServiceCategories,
+            child: const Text('إعادة المحاولة'),
+          ),
+        ],
       ),
+    );
+  }
+
+  Widget _buildContent() {
+    return SingleChildScrollView(
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Row(
-            children: [
-              CircleAvatar(
-                radius: 16,
-                backgroundColor: Colors.purple[100],
-                child: Text(
-                  (review['user_name'] as String).isNotEmpty
-                      ? (review['user_name'] as String)[0].toUpperCase()
-                      : '?',
-                  style: TextStyle(
-                    color: Colors.purple[700],
+          _buildServiceHeader(),
+          const SizedBox(height: 16),
+          _buildServiceInfo(),
+          const SizedBox(height: 24),
+          _buildCategoriesSection(),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildServiceHeader() {
+    return Container(
+      width: double.infinity,
+      height: 200,
+      decoration: BoxDecoration(
+        gradient: LinearGradient(
+          begin: Alignment.topCenter,
+          end: Alignment.bottomCenter,
+          colors: [Colors.blue, Colors.blue.shade700],
+        ),
+      ),
+      child: Stack(
+        children: [
+          // صورة الخدمة
+          if (widget.service.images.isNotEmpty)
+            Positioned.fill(
+              child: CachedNetworkImage(
+                imageUrl: widget.service.images.first,
+                fit: BoxFit.cover,
+                placeholder: (context, url) => Container(
+                  color: Colors.grey[300],
+                  child: const Icon(Icons.image, size: 64, color: Colors.grey),
+                ),
+                errorWidget: (context, url, error) => Container(
+                  color: Colors.grey[300],
+                  child: const Icon(Icons.error, size: 64, color: Colors.grey),
+                ),
+              ),
+            ),
+          // طبقة شفافة
+          Container(
+            decoration: BoxDecoration(
+              gradient: LinearGradient(
+                begin: Alignment.topCenter,
+                end: Alignment.bottomCenter,
+                colors: [
+                  Colors.black.withOpacity(0.3),
+                  Colors.black.withOpacity(0.7),
+                ],
+              ),
+            ),
+          ),
+          // معلومات الخدمة
+          Positioned(
+            bottom: 16,
+            left: 16,
+            right: 16,
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  widget.service.title,
+                  style: const TextStyle(
+                    color: Colors.white,
+                    fontSize: 24,
                     fontWeight: FontWeight.bold,
                   ),
                 ),
-              ),
-              const SizedBox(width: 8),
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
+                const SizedBox(height: 8),
+                Row(
                   children: [
+                    Icon(Icons.location_on, color: Colors.white70, size: 16),
+                    const SizedBox(width: 4),
                     Text(
-                      review['user_name'] ?? 'مستخدم غير معروف',
+                      widget.service.city,
                       style: const TextStyle(
-                        fontWeight: FontWeight.bold,
+                        color: Colors.white70,
                         fontSize: 14,
                       ),
                     ),
-                    Row(
-                      children: [
-                        ...List.generate(
-                          5,
-                          (index) => Icon(
-                            index < (review['rating'] as int)
-                                ? Icons.star
-                                : Icons.star_border,
-                            size: 14,
-                            color: Colors.amber,
-                          ),
-                        ),
-                        const SizedBox(width: 4),
-                        Text(
-                          '${review['rating']}/5',
-                          style: const TextStyle(fontSize: 12),
-                        ),
-                      ],
+                    const Spacer(),
+                    Text(
+                      '${widget.service.price.toStringAsFixed(0)} ريال',
+                      style: const TextStyle(
+                        color: Colors.white,
+                        fontSize: 18,
+                        fontWeight: FontWeight.bold,
+                      ),
                     ),
                   ],
                 ),
-              ),
-              Text(
-                _formatDate(review['created_at']),
-                style: const TextStyle(fontSize: 12, color: Colors.grey),
-              ),
-            ],
+              ],
+            ),
           ),
-          if (review['comment'] != null &&
-              (review['comment'] as String).isNotEmpty) ...[
-            const SizedBox(height: 8),
-            Text(review['comment'], style: const TextStyle(fontSize: 14)),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildServiceInfo() {
+    return Padding(
+      padding: const EdgeInsets.all(16),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            'وصف الخدمة',
+            style: TextStyle(
+              fontSize: 18,
+              fontWeight: FontWeight.bold,
+              color: Colors.grey[800],
+            ),
+          ),
+          const SizedBox(height: 8),
+          Text(
+            widget.service.description,
+            style: TextStyle(
+              fontSize: 16,
+              color: Colors.grey[600],
+              height: 1.5,
+            ),
+          ),
+          const SizedBox(height: 16),
+          if (_serviceInfo != null) ...[
+            _buildInfoRow(
+              'المزود',
+              _serviceInfo!['provider_name'] ?? 'غير محدد',
+            ),
+            _buildInfoRow(
+              'الفئة',
+              _serviceInfo!['category_name'] ?? 'غير محدد',
+            ),
+            _buildInfoRow(
+              'الموقع',
+              _serviceInfo!['service_city'] ?? widget.service.city,
+            ),
           ],
         ],
       ),
     );
   }
 
-  String _formatDate(String? dateString) {
-    if (dateString == null) return '';
+  Widget _buildInfoRow(String label, String value) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 4),
+      child: Row(
+        children: [
+          Text(
+            '$label: ',
+            style: TextStyle(
+              fontSize: 16,
+              fontWeight: FontWeight.bold,
+              color: Colors.grey[700],
+            ),
+          ),
+          Expanded(
+            child: Text(
+              value,
+              style: TextStyle(fontSize: 16, color: Colors.grey[600]),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
 
-    try {
-      final date = DateTime.parse(dateString);
-      final now = DateTime.now();
-      final difference = now.difference(date);
+  Widget _buildCategoriesSection() {
+    return Padding(
+      padding: const EdgeInsets.all(16),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Icon(Icons.category, color: Colors.blue, size: 24),
+              const SizedBox(width: 8),
+              Text(
+                'فئات الخدمة',
+                style: TextStyle(
+                  fontSize: 20,
+                  fontWeight: FontWeight.bold,
+                  color: Colors.grey[800],
+                ),
+              ),
+              const Spacer(),
+              Text(
+                '${_categories.length} فئة',
+                style: TextStyle(fontSize: 14, color: Colors.grey[600]),
+              ),
+            ],
+          ),
+          const SizedBox(height: 16),
+          if (_categories.isEmpty)
+            _buildEmptyCategories()
+          else
+            _buildCategoriesList(),
+        ],
+      ),
+    );
+  }
 
-      if (difference.inDays > 0) {
-        return 'منذ ${difference.inDays} يوم';
-      } else if (difference.inHours > 0) {
-        return 'منذ ${difference.inHours} ساعة';
-      } else if (difference.inMinutes > 0) {
-        return 'منذ ${difference.inMinutes} دقيقة';
-      } else {
-        return 'الآن';
-      }
-    } catch (e) {
-      return dateString;
-    }
+  Widget _buildEmptyCategories() {
+    return Container(
+      padding: const EdgeInsets.all(32),
+      child: Column(
+        children: [
+          Icon(Icons.category_outlined, size: 64, color: Colors.grey[400]),
+          const SizedBox(height: 16),
+          Text(
+            'لا توجد فئات خدمة متاحة حالياً',
+            style: TextStyle(fontSize: 16, color: Colors.grey[600]),
+            textAlign: TextAlign.center,
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildCategoriesList() {
+    return ListView.builder(
+      shrinkWrap: true,
+      physics: const NeverScrollableScrollPhysics(),
+      itemCount: _categories.length,
+      itemBuilder: (context, index) {
+        final category = _categories[index];
+        return Padding(
+          padding: const EdgeInsets.only(bottom: 12),
+          child: ServiceCategoryCard(
+            category: category,
+            onTap: () => _onCategoryTap(category),
+          ),
+        );
+      },
+    );
+  }
+
+  void _onCategoryTap(ServiceCategory category) {
+    // يمكن إضافة منطق إضافي هنا مثل الانتقال إلى صفحة الحجز
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: Text(category.name),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text('السعر: ${category.price.toStringAsFixed(0)} ريال'),
+            if (category.description.isNotEmpty) ...[
+              const SizedBox(height: 8),
+              Text('الوصف: ${category.description}'),
+            ],
+            if (category.duration != null) ...[
+              const SizedBox(height: 8),
+              Text('المدة: ${category.duration}'),
+            ],
+            if (category.materials != null) ...[
+              const SizedBox(height: 8),
+              Text('المواد: ${category.materials}'),
+            ],
+            if (category.additionalFeatures != null) ...[
+              const SizedBox(height: 8),
+              Text('ميزات إضافية: ${category.additionalFeatures}'),
+            ],
+          ],
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: const Text('إلغاء'),
+          ),
+          ElevatedButton(
+            onPressed: () {
+              Navigator.pop(context);
+              _bookService(category);
+            },
+            child: const Text('حجز الخدمة'),
+          ),
+        ],
+      ),
+    );
+  }
+
+  void _bookService(ServiceCategory category) {
+    // هنا يمكن الانتقال إلى صفحة الحجز
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text('سيتم إضافة صفحة الحجز قريباً'),
+        backgroundColor: Colors.blue,
+      ),
+    );
   }
 }

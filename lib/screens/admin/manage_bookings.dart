@@ -24,30 +24,19 @@ class _ManageBookingsState extends State<ManageBookings> {
   Future<void> loadBookings() async {
     setState(() => isLoading = true);
     try {
-      final response = await AdminApi.getAllBookingsWithStats(
+      final bookingsList = await AdminApi.getAllBookingsWithStats(
         status: selectedStatus == 'الكل' ? null : selectedStatus,
       );
 
-      if (response['success'] == true) {
-        setState(() {
-          bookings = List<Map<String, dynamic>>.from(response['data']);
-          isLoading = false;
-        });
-      } else {
-        setState(() => isLoading = false);
-        if (mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(
-              content: Text(
-                'خطأ: ${response['message'] ?? 'فشل في تحميل الحجوزات'}',
-              ),
-              backgroundColor: Colors.red,
-            ),
-          );
-        }
-      }
+      setState(() {
+        bookings = List<Map<String, dynamic>>.from(bookingsList['data']);
+        isLoading = false;
+      });
     } catch (e) {
-      setState(() => isLoading = false);
+      setState(() {
+        bookings = [];
+        isLoading = false;
+      });
       if (mounted) {
         ScaffoldMessenger.of(
           context,

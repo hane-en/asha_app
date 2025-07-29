@@ -7,8 +7,8 @@ import '../../routes/route_arguments.dart';
 import '../../utils/helpers.dart';
 
 class BookingStatusPage extends StatefulWidget {
-  const BookingStatusPage({super.key, required this.userId});
-  final int userId;
+  const BookingStatusPage({super.key});
+  // إزالة required this.userId لأننا سنعمل بدون تسجيل دخول
 
   @override
   _BookingStatusPageState createState() => _BookingStatusPageState();

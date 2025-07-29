@@ -197,7 +197,7 @@ analyzer:
     unnecessary_statements: ignore
     unnecessary_string_escapes: ignore
     unnecessary_string_interpolations: ignore
-    unnecessary_ternaries: ignore
+    # unnecessary_ternaries: ignore
     unrelated_type_equality_checks: ignore
     use_function_type_syntax_for_parameters: ignore
     use_rethrow_when_possible: ignore

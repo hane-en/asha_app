@@ -63,20 +63,24 @@ class ServiceListPage extends StatelessWidget {
                       MaterialPageRoute(
                         builder: (_) => DetailsPage(
                           service: {
-                            'name': service.title,
+                            'id': service.id,
+                            'title': service.title,
                             'description': service.description,
-                            'image': service.images.isNotEmpty
-                                ? service.images.first
-                                : '',
+                            'images': service.images,
                             'price': service.price,
                             'provider_name': service.providerName ?? '',
+                            'category_name': service.categoryName ?? '',
+                            'city': service.city ?? '',
+                            'specifications': service.specifications,
+                            'tags': service.tags,
+                            'payment_terms': service.paymentTerms,
+                            'availability': service.availability,
                           },
                         ),
                       ),
                     );
                   },
-                  onCall:
-                      null, // حذف زر الاتصال لأنه يعتمد على خاصية غير موجودة
+                  onCall: null,
                 );
               },
             );

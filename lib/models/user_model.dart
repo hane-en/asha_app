@@ -54,6 +54,27 @@ class User {
     required this.updatedAt,
   });
 
-  factory User.fromJson(Map<String, dynamic> json) => _$UserFromJson(json);
+  factory User.fromJson(Map<String, dynamic> json) => User(
+    id: int.tryParse(json['id'].toString()) ?? 0,
+    name: json['name'] ?? '',
+    email: json['email'] ?? '',
+    phone: json['phone'] ?? '',
+    userType: json['user_type'] ?? 'user',
+    profileImage: json['profile_image'],
+    isVerified: json['is_verified'] == true || json['is_verified'] == 1,
+    isActive: json['is_active'] == true || json['is_active'] == 1,
+    rating: (json['rating'] as num?)?.toDouble() ?? 0.0,
+    reviewCount: int.tryParse(json['review_count'].toString()) ?? 0,
+    bio: json['bio'],
+    website: json['website'],
+    address: json['address'],
+    city: json['city'],
+    latitude: (json['latitude'] as num?)?.toDouble(),
+    longitude: (json['longitude'] as num?)?.toDouble(),
+    isYemeniAccount:
+        json['is_yemeni_account'] == true || json['is_yemeni_account'] == 1,
+    createdAt: json['created_at'] ?? '',
+    updatedAt: json['updated_at'] ?? '',
+  );
   Map<String, dynamic> toJson() => _$UserToJson(this);
 }

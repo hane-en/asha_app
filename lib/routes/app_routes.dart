@@ -24,6 +24,9 @@ import '../screens/auth/provider_login.dart';
 import '../screens/auth/signup_page.dart';
 import '../screens/auth/verify_page.dart';
 import '../screens/provider/add_service_page.dart';
+import '../screens/provider/add_service_category_page.dart';
+import '../screens/provider/edit_service_category_page.dart';
+import '../screens/provider/service_category_details_page.dart';
 import '../screens/provider/my_ads_page.dart';
 import '../screens/provider/my_bookings_page.dart';
 import '../screens/provider/my_services_page.dart';
@@ -43,6 +46,15 @@ import '../screens/user/user_help_page.dart';
 import '../screens/user/user_home_page.dart';
 import '../screens/provider/provider_help_page.dart';
 import '../screens/provider/edit_provider_profile_page.dart';
+import '../test_services_connection.dart';
+import '../test_connection.dart';
+import '../test_services_home_method.dart';
+import '../test_backend_connection.dart';
+import '../test_unified_data.dart';
+import '../test_services_simple.dart';
+import '../test_api_simple.dart';
+import '../screens/user/test_favorites_debug.dart';
+import '../screens/user/test_local_favorites.dart';
 import 'route_arguments.dart';
 import 'route_names.dart';
 
@@ -130,12 +142,12 @@ class AppRoutes {
           );
         case favorites:
           return MaterialPageRoute(
-            builder: (_) => const FavoritesPage(userId: 1),
+            builder: (_) => FavoritesPage(),
             settings: settings,
           );
         case bookingStatus:
           return MaterialPageRoute(
-            builder: (_) => const BookingStatusPage(userId: 1),
+            builder: (_) => const BookingStatusPage(),
             settings: settings,
           );
         case providerHome:
@@ -146,6 +158,33 @@ class AppRoutes {
         case addService:
           return MaterialPageRoute(
             builder: (_) => const AddServicePage(),
+            settings: settings,
+          );
+        case RouteNames.addServiceCategory:
+          final args = settings.arguments as Map<String, dynamic>?;
+          return MaterialPageRoute(
+            builder: (_) => AddServiceCategoryPage(
+              serviceId: args?['serviceId'] ?? 0,
+              serviceTitle: args?['serviceTitle'] ?? '',
+            ),
+            settings: settings,
+          );
+        case RouteNames.editServiceCategory:
+          final args = settings.arguments as Map<String, dynamic>?;
+          return MaterialPageRoute(
+            builder: (_) => EditServiceCategoryPage(
+              categoryId: args?['categoryId'] ?? 0,
+              serviceTitle: args?['serviceTitle'] ?? '',
+            ),
+            settings: settings,
+          );
+        case RouteNames.serviceCategoryDetails:
+          final args = settings.arguments as Map<String, dynamic>?;
+          return MaterialPageRoute(
+            builder: (_) => ServiceCategoryDetailsPage(
+              categoryId: args?['categoryId'] ?? 0,
+              serviceTitle: args?['serviceTitle'] ?? '',
+            ),
             settings: settings,
           );
         case myServices:
@@ -318,6 +357,43 @@ class AppRoutes {
             builder: (_) => const ProviderNotificationsPage(),
             settings: settings,
           );
+        case '/test-services':
+          return MaterialPageRoute(
+            builder: (_) => TestServicesConnection(),
+            settings: settings,
+          );
+        case '/test-connection':
+          return MaterialPageRoute(
+            builder: (_) => TestConnection(),
+            settings: settings,
+          );
+        case '/test-services-home':
+          return MaterialPageRoute(
+            builder: (_) => TestServicesHomeMethod(),
+            settings: settings,
+          );
+        case '/test-backend':
+          return MaterialPageRoute(
+            builder: (_) => TestBackendConnection(),
+            settings: settings,
+          );
+        case '/test-unified':
+          return MaterialPageRoute(
+            builder: (_) => TestUnifiedData(),
+            settings: settings,
+          );
+        case '/test-services-simple':
+          return MaterialPageRoute(
+            builder: (_) => TestServicesSimple(),
+            settings: settings,
+          );
+        case '/test-api-simple':
+          return MaterialPageRoute(
+            builder: (_) => TestApiSimple(),
+            settings: settings,
+          );
+        case '/test-favorites':
+          return MaterialPageRoute(builder: (_) => const TestFavoritesDebug());
         default:
           return MaterialPageRoute(
             builder: (_) => const _NotFoundPage(),
@@ -404,27 +480,27 @@ class _ErrorPage extends StatelessWidget {
 class _NotFoundPage extends StatelessWidget {
   const _NotFoundPage();
 
-  Future<String> _getHomeRoute() async {
-    final prefs = await SharedPreferences.getInstance();
-    final role = prefs.getString('role');
-    switch (role) {
-      case 'user':
-        return AppRoutes.userHome;
-      case 'provider':
-        return AppRoutes.providerHome;
-      case 'admin':
-        return AppRoutes.adminHome;
-      default:
-        return AppRoutes
-            .userHome; // تعديل هنا: اجعل الصفحة الافتراضية هي userHome
-    }
-  }
-
   @override
   Widget build(BuildContext context) {
     // إعادة التوجيه تلقائياً بدون أي واجهة
     WidgetsBinding.instance.addPostFrameCallback((_) async {
-      final route = await _getHomeRoute();
+      final prefs = await SharedPreferences.getInstance();
+      final role = prefs.getString('role');
+      String route;
+      switch (role) {
+        case 'user':
+          route = AppRoutes.userHome;
+          break;
+        case 'provider':
+          route = AppRoutes.providerHome;
+          break;
+        case 'admin':
+          route = AppRoutes.adminHome;
+          break;
+        default:
+          route = AppRoutes.userHome;
+          break;
+      }
       // ignore: use_build_context_synchronously
       Navigator.pushNamedAndRemoveUntil(context, route, (r) => false);
     });

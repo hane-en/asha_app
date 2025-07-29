@@ -2,12 +2,14 @@ import 'dart:convert';
 import 'package:http/http.dart' as http;
 
 class AdminApi {
-  static const String baseUrl = 'http://192.168.149.247/asha_app_backend';
+  // static const String baseUrl = 'http://192.168.1.3/asha_app_backend';
+  // static const String baseUrl = 'http://localhost/asha_app_backend';
+  static const String baseUrl = 'http://127.0.0.1/asha_app_tag';
 
   // ✅ تسجيل دخول المشرف
   static Future<bool> loginAdmin(String username, String password) async {
     final response = await http.post(
-      Uri.parse('$baseUrl/auth/admin_login.php'),
+      Uri.parse('$baseUrl/api/auth/admin_login.php'),
       body: {'username': username, 'password': password},
     );
     final data = jsonDecode(response.body);
@@ -17,7 +19,7 @@ class AdminApi {
   // ✅ جلب جميع الخدمات
   static Future<List<dynamic>> getAllServices() async {
     final response = await http.get(
-      Uri.parse('$baseUrl/admin/get_all_services.php'),
+      Uri.parse('$baseUrl/api/admin/get_all_services.php'),
     );
     final data = jsonDecode(response.body);
     return data['success'] == true ? data['data'] : [];
@@ -26,7 +28,7 @@ class AdminApi {
   // ✅ حذف خدمة
   static Future<bool> deleteService(int id) async {
     final response = await http.post(
-      Uri.parse('$baseUrl/admin/delete_service.php'),
+      Uri.parse('$baseUrl/api/admin/delete_service.php'),
       body: {'id': '$id'},
     );
     final data = jsonDecode(response.body);
@@ -35,7 +37,9 @@ class AdminApi {
 
   // ✅ جلب التعليقات
   static Future<List<dynamic>> getAllComments() async {
-    final response = await http.get(Uri.parse('$baseUrl/get_all_comments.php'));
+    final response = await http.get(
+      Uri.parse('$baseUrl/api/admin/get_all_comments.php'),
+    );
     final data = jsonDecode(response.body);
     return data['success'] == true ? data['data'] : [];
   }
@@ -43,7 +47,7 @@ class AdminApi {
   // ✅ حذف تعليق
   static Future<bool> deleteComment(int id) async {
     final response = await http.post(
-      Uri.parse('$baseUrl/delete_comment.php'),
+      Uri.parse('$baseUrl/api/admin/delete_comment.php'),
       body: {'id': '$id'},
     );
     final data = jsonDecode(response.body);
@@ -54,7 +58,7 @@ class AdminApi {
   static Future<Map<String, dynamic>> getAllBookingsWithStats({
     String? status,
   }) async {
-    String url = '$baseUrl/admin/get_all_bookings.php';
+    String url = '$baseUrl/api/admin/get_all_bookings.php';
     if (status != null && status != 'الكل') {
       url += '?status=$status';
     }
@@ -69,7 +73,7 @@ class AdminApi {
   // ✅ جلب جميع الإعلانات مع الإحصائيات
   static Future<Map<String, dynamic>> getAllAdsWithStats() async {
     final response = await http.get(
-      Uri.parse('$baseUrl/admin/get_all_ads.php'),
+      Uri.parse('$baseUrl/api/admin/get_all_ads.php'),
     );
     final data = jsonDecode(response.body);
     return data['success'] == true
@@ -83,7 +87,7 @@ class AdminApi {
     String reason,
   ) async {
     final response = await http.post(
-      Uri.parse('$baseUrl/admin/delete_ad.php'),
+      Uri.parse('$baseUrl/api/admin/delete_ad.php'),
       headers: {'Content-Type': 'application/json'},
       body: json.encode({'ad_id': adId, 'reason': reason}),
     );
@@ -97,7 +101,7 @@ class AdminApi {
     String newStatus,
   ) async {
     final response = await http.post(
-      Uri.parse('$baseUrl/bookings/update_booking_status.php'),
+      Uri.parse('$baseUrl/api/bookings/update_booking_status.php'),
       headers: {'Content-Type': 'application/json'},
       body: json.encode({'booking_id': bookingId, 'status': newStatus}),
     );
@@ -108,7 +112,7 @@ class AdminApi {
   // ✅ حذف حجز
   static Future<bool> deleteBooking(int bookingId) async {
     final response = await http.post(
-      Uri.parse('$baseUrl/bookings/delete_booking.php'),
+      Uri.parse('$baseUrl/api/bookings/delete_booking.php'),
       headers: {'Content-Type': 'application/json'},
       body: json.encode({'booking_id': bookingId}),
     );
@@ -119,7 +123,7 @@ class AdminApi {
   // ✅ جلب طلبات الانضمام
   static Future<List<dynamic>> getJoinRequests() async {
     final response = await http.get(
-      Uri.parse('$baseUrl/admin/get_provider_requests.php'),
+      Uri.parse('$baseUrl/api/admin/get_provider_requests.php'),
     );
     final data = jsonDecode(response.body);
     return data;
@@ -128,7 +132,7 @@ class AdminApi {
   // ✅ قبول طلب انضمام مزود خدمة
   static Future<bool> approveProvider(int id) async {
     final response = await http.post(
-      Uri.parse('$baseUrl/admin/manage_provider_requests.php'),
+      Uri.parse('$baseUrl/api/admin/manage_provider_requests.php'),
       body: {'id': '$id', 'action': 'approve'},
     );
     final data = jsonDecode(response.body);

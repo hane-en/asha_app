@@ -67,7 +67,7 @@ class ConnectionTest {
     try {
       final response = await http
           .get(
-            Uri.parse('$baseUrl/services/get_categories.php'),
+            Uri.parse('$baseUrl/api/categories/get_all.php'),
             headers: {'Content-Type': 'application/json'},
           )
           .timeout(timeout);
@@ -107,7 +107,7 @@ class ConnectionTest {
 
       final response = await http
           .post(
-            Uri.parse('$baseUrl/auth/register.php'),
+            Uri.parse('$baseUrl/api/auth/register.php'),
             headers: {'Content-Type': 'application/json'},
             body: json.encode(testData),
           )
@@ -140,7 +140,7 @@ class ConnectionTest {
     try {
       final response = await http
           .get(
-            Uri.parse('$baseUrl/ads/get_active_ads.php'),
+            Uri.parse('$baseUrl/api/ads/get_active_ads.php'),
             headers: {'Content-Type': 'application/json'},
           )
           .timeout(timeout);
@@ -172,7 +172,7 @@ class ConnectionTest {
     try {
       final response = await http
           .get(
-            Uri.parse('$baseUrl/services/get_all_services.php'),
+            Uri.parse('$baseUrl/api/services/get_all.php'),
             headers: {'Content-Type': 'application/json'},
           )
           .timeout(timeout);

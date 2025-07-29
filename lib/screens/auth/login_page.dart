@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import '../../services/auth_service.dart';
+import '../../services/api_service.dart';
 import '../../utils/validators.dart';
 // import '../../utils/constants.dart';
 import '../../routes/app_routes.dart';
@@ -8,6 +9,7 @@ import '../user/user_home_page.dart';
 import '../provider/provider_home_page.dart';
 import '../admin/admin_home_page.dart';
 import 'signup_page.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 class LoginPage extends StatefulWidget {
   const LoginPage({super.key});
@@ -24,10 +26,43 @@ class _LoginPageState extends State<LoginPage> {
   bool isLoading = false;
 
   @override
+  void initState() {
+    super.initState();
+    // اختبار الاتصال عند فتح الصفحة
+    _testConnection();
+  }
+
+  @override
   void dispose() {
     loginController.dispose();
     passwordController.dispose();
     super.dispose();
+  }
+
+  // دالة اختبار الاتصال
+  Future<void> _testConnection() async {
+    try {
+      final result = await ApiService.testConnection();
+      print('🔍 Connection test result: $result');
+
+      if (result['success']) {
+        print('✅ Server is working!');
+      } else {
+        print('❌ Server connection failed: ${result['message']}');
+        // إظهار رسالة للمستخدم
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text('مشكلة في الاتصال بالخادم: ${result['message']}'),
+              backgroundColor: Colors.red,
+              duration: Duration(seconds: 5),
+            ),
+          );
+        }
+      }
+    } catch (e) {
+      print('❌ Error testing connection: $e');
+    }
   }
 
   Future<void> _login() async {
@@ -48,7 +83,17 @@ class _LoginPageState extends State<LoginPage> {
         var msg = '';
         Widget nextPage;
 
-        switch (data['role']) {
+        // تحديد نوع المستخدم من البيانات المرجعة
+        final userType = data['data']['user']['user_type'] ?? 'user';
+        final userId = data['data']['user']['id'];
+
+        // حفظ بيانات المستخدم في SharedPreferences
+        final prefs = await SharedPreferences.getInstance();
+        await prefs.setInt('user_id', userId);
+        await prefs.setString('user_name', data['data']['user']['name'] ?? '');
+        await prefs.setString('role', userType);
+
+        switch (userType) {
           case 'user':
             msg = '🎉 مرحبًا بك كمستخدم!';
             nextPage = const UserHomePage();
@@ -62,7 +107,7 @@ class _LoginPageState extends State<LoginPage> {
             nextPage = const AdminHomePage();
             break;
           default:
-            msg = '⚠️ نوع المستخدم غير معروف.';
+            msg = '⚠️ نوع المستخدم غير معروف: $userType';
             nextPage = const LoginPage();
         }
 
@@ -76,7 +121,7 @@ class _LoginPageState extends State<LoginPage> {
         );
 
         String route;
-        switch (data['role']) {
+        switch (userType) {
           case 'user':
             route = AppRoutes.userHome;
             break;
