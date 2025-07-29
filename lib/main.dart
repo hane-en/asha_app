@@ -62,7 +62,7 @@ class MyApp extends StatelessWidget {
       darkTheme: darkTheme,
       themeMode: themeNotifier.isDarkMode ? ThemeMode.dark : ThemeMode.light,
       onGenerateRoute: AppRoutes.generateRoute,
-      initialRoute: '/user-home',
+      initialRoute: AppRoutes.userHome,
       builder: (context, child) => Directionality(
         textDirection: localeNotifier.locale.languageCode == 'ar'
             ? TextDirection.rtl

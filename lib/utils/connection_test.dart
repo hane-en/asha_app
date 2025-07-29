@@ -271,7 +271,7 @@ class ConnectionTest {
       try {
         final response = await http
             .post(
-              Uri.parse('$baseUrl/auth/register.php'),
+              Uri.parse('$baseUrl/api/auth/register.php'),
               headers: {'Content-Type': 'application/json'},
               body: json.encode({
                 'name': 'Test User',

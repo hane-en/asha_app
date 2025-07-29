@@ -121,19 +121,25 @@ class _LoginPageState extends State<LoginPage> {
         );
 
         String route;
+        print('🔍 AppRoutes.userHome = ${AppRoutes.userHome}');
         switch (userType) {
           case 'user':
             route = AppRoutes.userHome;
+            print('🎯 Navigating to user home: $route');
             break;
           case 'provider':
             route = AppRoutes.providerHome;
+            print('🎯 Navigating to provider home: $route');
             break;
           case 'admin':
             route = AppRoutes.adminHome;
+            print('🎯 Navigating to admin home: $route');
             break;
           default:
             route = AppRoutes.login;
+            print('⚠️ Unknown user type, staying on login: $route');
         }
+        print('🚀 About to navigate to: $route');
         Navigator.pushNamedAndRemoveUntil(context, route, (route) => false);
       } else {
         final errorMsg =

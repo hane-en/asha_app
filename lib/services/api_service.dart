@@ -854,7 +854,7 @@ class ApiService {
   ) async {
     try {
       final data = await _makeRequest(
-        'auth/reset_password.php',
+        'api/auth/reset_password.php',
         body: json.encode({
           'user_identifier': userIdentifier,
           'new_password': newPassword,
@@ -898,7 +898,7 @@ class ApiService {
   ) async {
     try {
       final data = await _makeRequest(
-        'auth/delete_account.php',
+        'api/auth/delete_account.php',
         body: json.encode({'user_id': userId, 'password': password}),
         isPost: true,
       );
