@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 
+<<<<<<< HEAD
 class AppColors {
   static const Color primaryColor = Color(0xFF8e24aa);
   static const Color secondaryColor = Color(0xFF9c27b0);
@@ -9,6 +10,12 @@ class AppColors {
   static const Color white = Colors.white;
   static const Color grey = Colors.grey;
 }
+=======
+// الألوان الرئيسية
+const Color primaryColor = Color(0xFF8e24aa);
+const Color secondaryColor = Color(0xFFE1BEE7);
+const Color accentColor = Color(0xFF4A148C);
+>>>>>>> cb84a2eea26d79ad48594283002ea73596c659d0
 
 final ThemeData lightTheme = ThemeData(
   primarySwatch: Colors.purple,

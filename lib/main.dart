@@ -8,7 +8,7 @@ import 'routes/app_routes.dart';
 import 'screens/provider/settings_page.dart' show ProviderLocaleNotifier;
 import 'screens/user/settings_page.dart' show LocaleNotifier;
 import 'utils/constants.dart';
-import 'utils/helpers.dart';
+import 'utils/helpers.dart' show ThemeNotifier;
 
 void main() {
   WidgetsFlutterBinding.ensureInitialized();
@@ -67,7 +67,10 @@ class MyApp extends StatelessWidget {
         textDirection: localeNotifier.locale.languageCode == 'ar'
             ? TextDirection.rtl
             : TextDirection.ltr,
-        child: child!,
+        child: MediaQuery(
+          data: MediaQuery.of(context).copyWith(textScaleFactor: 1.0),
+          child: child!,
+        ),
       ),
     );
   }

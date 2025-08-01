@@ -22,15 +22,24 @@ class _HomePageState extends State<HomePage> {
   Future<void> loadServices() async {
     try {
       final results = await ApiService.getAllServices();
+      if (results['success'] && results['data'] != null) {
+        final servicesData = results['data'] as List;
+        setState(() {
+          services = servicesData
+              .map((json) => Service.fromJson(json))
+              .toList();
+          isLoading = false;
+        });
+      } else {
+        setState(() => isLoading = false);
+      }
+    } catch (e) {
+      print('Error loading services: $e');
       setState(() {
-        services = results;
+        services = [];
         isLoading = false;
       });
-    } catch (e) {
-      setState(() => isLoading = false);
-      ScaffoldMessenger.of(
-        context,
-      ).showSnackBar(SnackBar(content: Text('خطأ في تحميل الخدمات: $e')));
+      // لا نعرض رسالة خطأ للمستخدم، فقط نعرض قائمة فارغة
     }
   }
 

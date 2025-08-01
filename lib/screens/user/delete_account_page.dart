@@ -28,10 +28,8 @@ class _DeleteAccountPageState extends State<DeleteAccountPage> {
     setState(() => isLoading = true);
 
     try {
-      final result = await ApiService.deleteAccount(
-        widget.userId,
-        passwordController.text.trim(),
-      );
+      // سيتم إضافة هذه الدالة لاحقاً
+      final result = {'success': false, 'message': 'غير متوفر حالياً'};
 
       setState(() => isLoading = false);
 

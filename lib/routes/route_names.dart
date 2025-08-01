@@ -7,7 +7,14 @@ class RouteNames {
   static const String forgotPassword = '/forgot-password';
   static const String providerLogin = '/provider-login';
   static const String adminLogin = '/admin-login';
+  static const String booking = '/booking';
 
+<<<<<<< HEAD
+=======
+  // ignore: constant_identifier_names
+  static const String BookingScreen = '/booking';
+
+>>>>>>> cb84a2eea26d79ad48594283002ea73596c659d0
   // User routes
   static const String userHome = '/user-home';
   static const String favorites = '/favorites';
@@ -16,7 +23,15 @@ class RouteNames {
   static const String help = '/help';
   static const String serviceSearch = '/service-search';
   static const String categoryServices = '/category-services';
+<<<<<<< HEAD
   static const String providerServices = '/provider-services';
+=======
+  static const String providersByCategory = '/providers-by-category';
+  static const String serviceProviders = '/service-providers';
+  static const String providerServices = '/provider-services';
+  static const String serviceDetails = '/service-details';
+  static const String offerDetails = '/offer-details';
+>>>>>>> cb84a2eea26d79ad48594283002ea73596c659d0
 
   // Provider routes
   static const String providerHome = '/provider-home';
@@ -30,6 +45,10 @@ class RouteNames {
   static const String providerSettings = '/provider-settings';
   static const String providerHelp = '/provider-help';
   static const String editProviderProfile = '/edit-provider-profile';
+<<<<<<< HEAD
+=======
+  static const String providerNotifications = '/provider-notifications';
+>>>>>>> cb84a2eea26d79ad48594283002ea73596c659d0
 
   // Admin routes
   static const String adminHome = '/admin-home';
@@ -58,4 +77,10 @@ class RouteNames {
   // System routes
   static const String splash = '/splash';
   static const String error = '/error';
+<<<<<<< HEAD
+=======
+  static const String testFlow = '/test-flow';
+  static const String testApi = '/test-api';
+  static const String databaseTest = '/database-test';
+>>>>>>> cb84a2eea26d79ad48594283002ea73596c659d0
 }

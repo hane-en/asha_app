@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import '../../services/services_service.dart';
 import '../../models/service_model.dart';
 import '../../widgets/service_card.dart';
+import '../../routes/route_names.dart';
 
 class ServicesScreen extends StatefulWidget {
   final int? categoryId;
@@ -34,7 +35,10 @@ class _ServicesScreenState extends State<ServicesScreen> {
     }
 
     try {
+<<<<<<< HEAD
       print('🔍 Loading services for category: ${widget.categoryId}');
+=======
+>>>>>>> cb84a2eea26d79ad48594283002ea73596c659d0
       Map<String, dynamic> response;
 
       if (widget.categoryId != null) {
@@ -45,6 +49,7 @@ class _ServicesScreenState extends State<ServicesScreen> {
           limit: 20,
         );
       } else {
+<<<<<<< HEAD
         // جلب جميع الخدمات مرتبة حسب الفئة
         response = await _servicesService.getAllServices(
           page: _currentPage,
@@ -55,6 +60,14 @@ class _ServicesScreenState extends State<ServicesScreen> {
       }
 
       print('📊 Response: $response');
+=======
+        // جلب جميع الخدمات (للتوافق مع الكود القديم)
+        response = await _servicesService.getAllServices(
+          page: _currentPage,
+          limit: 20,
+        );
+      }
+>>>>>>> cb84a2eea26d79ad48594283002ea73596c659d0
 
       if (response['success'] == true) {
         final data = response['data'];
@@ -145,12 +158,15 @@ class _ServicesScreenState extends State<ServicesScreen> {
                           ? 'لا توجد خدمات في هذه الفئة حالياً'
                           : 'لا توجد خدمات متاحة حالياً',
                       style: TextStyle(fontSize: 14, color: Colors.grey[500]),
+<<<<<<< HEAD
                       textAlign: TextAlign.center,
                     ),
                     const SizedBox(height: 16),
                     ElevatedButton(
                       onPressed: () => _loadServices(refresh: true),
                       child: const Text('إعادة المحاولة'),
+=======
+>>>>>>> cb84a2eea26d79ad48594283002ea73596c659d0
                     ),
                   ],
                 ),
@@ -176,8 +192,19 @@ class _ServicesScreenState extends State<ServicesScreen> {
                     child: ServiceCard(
                       service: service,
                       onTap: () {
+<<<<<<< HEAD
                         print('Navigate to service details: ${service.id}');
                         // يمكن إضافة التنقل إلى صفحة تفاصيل الخدمة هنا
+=======
+                        Navigator.pushNamed(
+                          context,
+                          RouteNames.serviceProviders,
+                          arguments: {
+                            'service_id': service.id,
+                            'service_name': service.title,
+                          },
+                        );
+>>>>>>> cb84a2eea26d79ad48594283002ea73596c659d0
                       },
                     ),
                   );

@@ -28,11 +28,20 @@ class _ManageBookingsState extends State<ManageBookings> {
         status: selectedStatus == 'الكل' ? null : selectedStatus,
       );
 
-      setState(() {
-        bookings = List<Map<String, dynamic>>.from(bookingsList['data']);
-        isLoading = false;
-      });
+      if (bookingsList['success'] && bookingsList['data'] != null) {
+        final data = bookingsList['data'] as List;
+        setState(() {
+          bookings = data.cast<Map<String, dynamic>>();
+          isLoading = false;
+        });
+      } else {
+        setState(() {
+          bookings = [];
+          isLoading = false;
+        });
+      }
     } catch (e) {
+      print('Error loading bookings: $e');
       setState(() {
         bookings = [];
         isLoading = false;

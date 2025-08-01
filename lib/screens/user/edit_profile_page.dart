@@ -2,7 +2,6 @@ import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import '../../services/api_service.dart';
 import '../../utils/validators.dart';
-import '../../routes/app_routes.dart';
 
 class EditProfilePage extends StatefulWidget {
   const EditProfilePage({super.key});
@@ -56,26 +55,15 @@ class _EditProfilePageState extends State<EditProfilePage> {
         final user = await ApiService.getUserProfile(userId);
         if (user != null) {
           setState(() {
-            _userData = {
-              'id': user.id,
-              'name': user.name,
-              'email': user.email,
-              'phone': user.phone,
-              'bio': user.bio,
-              'website': user.website,
-              'address': user.address,
-              'city': user.city,
-            };
+            _userData = user;
             _userRole = userRole;
-
-            // تعبئة الحقول بالبيانات الحالية
-            _nameController.text = user.name;
-            _emailController.text = user.email;
-            _phoneController.text = user.phone;
-            _bioController.text = user.bio ?? '';
-            _websiteController.text = user.website ?? '';
-            _addressController.text = user.address ?? '';
-            _cityController.text = user.city ?? '';
+            _nameController.text = user['name'] ?? '';
+            _emailController.text = user['email'] ?? '';
+            _phoneController.text = user['phone'] ?? '';
+            _bioController.text = user['bio'] ?? '';
+            _websiteController.text = user['website'] ?? '';
+            _addressController.text = user['address'] ?? '';
+            _cityController.text = user['city'] ?? '';
           });
         }
       }

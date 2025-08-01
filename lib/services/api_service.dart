@@ -1,17 +1,12 @@
 import 'dart:convert';
-import 'dart:io';
 import 'dart:async';
 import 'package:http/http.dart' as http;
-import '../models/service_model.dart';
-import '../models/user_model.dart';
-import '../models/booking_model.dart';
-import '../models/ad_model.dart';
 import '../config/config.dart';
 
 class ApiService {
-  static const String _baseUrl = Config.apiBaseUrl;
-  static const Duration _timeout = Duration(seconds: 30);
+  static const String baseUrl = Config.apiBaseUrl;
 
+<<<<<<< HEAD
   // Helper method to make API requests with optional message suppression
   static Future<Map<String, dynamic>> _makeRequest(
     String endpoint, {
@@ -43,14 +38,67 @@ class ApiService {
         response = await http
             .get(Uri.parse(url), headers: headers)
             .timeout(_timeout);
+=======
+  // Headers للطلبات
+  static Map<String, String> get _headers => {
+    'Content-Type': 'application/json',
+    'Accept': 'application/json',
+  };
+
+  // دالة مساعدة للطلبات
+  static Future<Map<String, dynamic>> _makeRequest(
+    String endpoint, {
+    Map<String, dynamic>? body,
+    Map<String, String>? queryParams,
+    String method = 'GET',
+  }) async {
+    try {
+      final uri = Uri.parse(
+        '$baseUrl$endpoint',
+      ).replace(queryParameters: queryParams);
+
+      print('Making request to: $uri'); // Debug info
+      print('Method: $method'); // Debug info
+      print('Headers: $_headers'); // Debug info
+
+      http.Response response;
+
+      switch (method.toUpperCase()) {
+        case 'GET':
+          response = await http.get(uri, headers: _headers);
+          break;
+        case 'POST':
+          response = await http.post(
+            uri,
+            headers: _headers,
+            body: jsonEncode(body),
+          );
+          break;
+        case 'PUT':
+          response = await http.put(
+            uri,
+            headers: _headers,
+            body: jsonEncode(body),
+          );
+          break;
+        case 'DELETE':
+          response = await http.delete(uri, headers: _headers);
+          break;
+        default:
+          throw Exception('Method not supported');
+>>>>>>> cb84a2eea26d79ad48594283002ea73596c659d0
       }
 
-      if (Config.enableLogging) {
-        print('API Response: ${response.statusCode} - ${response.body}');
-      }
+      // طباعة معلومات الاستجابة للتشخيص
+      print('Response Status: ${response.statusCode}');
+      print('Response Headers: ${response.headers}');
+      print('Response Body: ${response.body}');
 
-      if (response.statusCode >= 200 && response.statusCode < 300) {
+      // التحقق من نوع المحتوى
+      final contentType = response.headers['content-type'] ?? '';
+      if (contentType.contains('application/json')) {
         try {
+<<<<<<< HEAD
           final responseData = json.decode(response.body);
 
           // إخفاء رسائل النجاح إذا كان مطلوباً
@@ -59,11 +107,22 @@ class ApiService {
           }
 
           return responseData;
+=======
+          final data = jsonDecode(response.body);
+          print('Parsed JSON data: $data'); // Debug info
+
+          if (response.statusCode >= 200 && response.statusCode < 300) {
+            return data;
+          } else {
+            throw Exception(data['message'] ?? 'حدث خطأ في الطلب');
+          }
+>>>>>>> cb84a2eea26d79ad48594283002ea73596c659d0
         } catch (e) {
-          print('Error parsing JSON response: $e');
-          return {'success': false, 'message': 'خطأ في تنسيق البيانات'};
+          print('JSON Decode Error: $e');
+          throw Exception('خطأ في تنسيق البيانات من الخادم');
         }
       } else {
+<<<<<<< HEAD
         print('HTTP Error: ${response.statusCode} - ${response.reasonPhrase}');
         return {
           'success': false,
@@ -361,244 +420,394 @@ class ApiService {
       if (data['success'] == true) {
         return List<Service>.from(
           data['data'].map((item) => Service.fromJson(item)),
+=======
+        // إذا لم يكن JSON، قد يكون خطأ في الخادم
+        print('Non-JSON Response: ${response.body}');
+        throw Exception(
+          'الخادم لا يعيد بيانات JSON صحيحة - تأكد من أن الخادم يعمل بشكل صحيح',
+>>>>>>> cb84a2eea26d79ad48594283002ea73596c659d0
         );
       }
-      return [];
     } catch (e) {
-      print('Error searching services: $e');
-      return [];
-    }
-  }
-
-  // 🟢 جلب الفئات الديناميكية
-  static Future<List<Map<String, dynamic>>> getCategories() async {
-    try {
-      print('🔍 Making request to categories API...');
-      final data = await _makeRequest('api/services/get_categories.php');
-      print('📊 API response: $data');
-
-      if (data['success'] == true) {
-        final categoriesData = data['data'];
-        print('📋 Categories data: $categoriesData');
-
-        if (categoriesData is List) {
-          final result = categoriesData
-              .where((item) => item is Map<String, dynamic>)
-              .map((item) => Map<String, dynamic>.from(item))
-              .toList();
-          print('✅ Processed categories: ${result.length} categories');
-          return result;
-        } else {
-          print(
-            '⚠️ Categories data is not a List: ${categoriesData.runtimeType}',
-          );
-        }
-      } else {
-        print('❌ API returned success: false - ${data['message']}');
+      print('Request Error: $e');
+      if (e.toString().contains('FormatException')) {
+        throw Exception(
+          'خطأ في تنسيق البيانات من الخادم - تأكد من أن الخادم يعمل بشكل صحيح',
+        );
       }
-      return [];
-    } catch (e) {
-      print('❌ Error fetching categories: $e');
-      return [];
+      throw Exception('خطأ في الاتصال: $e');
     }
   }
 
-  // 🟢 جلب الخدمات مع العروض
-  static Future<Map<String, dynamic>> getServicesWithOffers({
+  // ==================== الخدمات ====================
+
+  // جلب جميع الخدمات
+  static Future<Map<String, dynamic>> getAllServices({
     int? categoryId,
-    int limit = 10,
-    int offset = 0,
+    int? providerId,
+    String? search,
   }) async {
+    String endpoint = '/api/services/get_all.php';
+    Map<String, String> queryParams = {};
+
+    if (categoryId != null) queryParams['category_id'] = categoryId.toString();
+    if (providerId != null) queryParams['provider_id'] = providerId.toString();
+    if (search != null && search.isNotEmpty) queryParams['search'] = search;
+
+    if (queryParams.isNotEmpty) {
+      endpoint +=
+          '?' +
+          queryParams.entries
+              .map((e) => '${e.key}=${Uri.encodeComponent(e.value)}')
+              .join('&');
+    }
+
+    return await _makeRequest(endpoint);
+  }
+
+  // جلب الخدمات المميزة
+  static Future<Map<String, dynamic>> getFeaturedServices({
+    int? categoryId,
+    int? limit = 10,
+  }) async {
+    String endpoint = '/api/services/featured.php';
+    Map<String, String> queryParams = {};
+
+    if (categoryId != null) queryParams['category_id'] = categoryId.toString();
+    if (limit != null) queryParams['limit'] = limit.toString();
+
+    if (queryParams.isNotEmpty) {
+      endpoint +=
+          '?' +
+          queryParams.entries
+              .map((e) => '${e.key}=${Uri.encodeComponent(e.value)}')
+              .join('&');
+    }
+
+    return await _makeRequest(endpoint);
+  }
+
+  // جلب خدمة محددة
+  static Future<Map<String, dynamic>> getServiceById(int serviceId) async {
+    return await _makeRequest(
+      '/api/services/get_by_id.php?service_id=$serviceId',
+    );
+  }
+
+  // ==================== الفئات ====================
+
+  // جلب جميع الفئات
+  static Future<Map<String, dynamic>> getAllCategories() async {
+    print('Calling getAllCategories...'); // Debug info
     try {
-      print('🔍 Fetching services with offers...');
-      print(
-        '📋 Parameters: categoryId=$categoryId, limit=$limit, offset=$offset',
-      );
-
-      final queryParams = <String, String>{
-        'limit': limit.toString(),
-        'offset': offset.toString(),
-      };
-
-      if (categoryId != null) {
-        queryParams['category_id'] = categoryId.toString();
-      }
-
-      final queryString = queryParams.entries
-          .map((e) => '${e.key}=${Uri.encodeComponent(e.value)}')
-          .join('&');
-
-      print('🔗 Request URL: api/services/get_all.php?$queryString');
-
-      final data = await _makeRequest('api/services/get_all.php?$queryString');
-      print('📊 API response: $data');
-
-      if (data['success'] == true) {
-        final servicesData = data['data'];
-        print('📋 Services data: $servicesData');
-
-        if (servicesData is List) {
-          final result = {
-            'services': servicesData,
-            'pagination': data['pagination'] ?? {},
-          };
-          print('✅ Processed services: ${servicesData.length} services');
-          return result;
-        } else {
-          print('⚠️ Services data is not a List: ${servicesData.runtimeType}');
-          return {'services': [], 'pagination': {}};
-        }
-      } else {
-        print('❌ API returned success: false - ${data['message']}');
-        return {'services': [], 'pagination': {}};
-      }
+      final result = await _makeRequest('/api/categories/get_all.php');
+      print('getAllCategories result: $result'); // Debug info
+      return result;
     } catch (e) {
-      print('❌ Error fetching services with offers: $e');
-      return {'services': [], 'pagination': {}};
+      print('Error in getAllCategories: $e'); // Debug info
+      // إرجاع بيانات افتراضية في حالة الخطأ
+      return {
+        'success': false,
+        'message': 'خطأ في تحميل الفئات: $e',
+        'data': [],
+      };
     }
   }
 
-  // البحث المتقدم مع فلترة حسب السعر والموقع
-  static Future<Map<String, dynamic>> advancedSearch({
-    String? query,
+  // جلب فئة محددة
+  static Future<Map<String, dynamic>> getCategoryById(int categoryId) async {
+    return await _makeRequest(
+      '/api/categories/get_by_id.php?category_id=$categoryId',
+    );
+  }
+
+  // جلب الخدمات حسب الفئة
+  static Future<Map<String, dynamic>> getServicesByCategory(
+    String categoryName,
+  ) async {
+    return await _makeRequest(
+      '/api/services/get_by_category.php?category_name=${Uri.encodeComponent(categoryName)}',
+    );
+  }
+
+  // ==================== المزودين ====================
+
+  // جلب مزودي الخدمات حسب الفئة
+  static Future<Map<String, dynamic>> getProvidersByCategory(
+    int categoryId,
+  ) async {
+    return await _makeRequest(
+      '/api/providers/get_by_category.php?category_id=$categoryId',
+    );
+  }
+
+  // جلب جميع المزودين مع فلترة متقدمة
+  static Future<Map<String, dynamic>> getAllProviders({
     int? categoryId,
-    double? minPrice,
-    double? maxPrice,
-    double? userLat,
-    double? userLng,
-    double? maxDistance,
+    String? search,
     String? sortBy,
     String? sortOrder,
-    int page = 1,
-    int limit = 10,
+    int? limit,
+    int? offset,
   }) async {
-    try {
-      final queryParams = <String, String>{};
+    String endpoint = '/api/providers/get_all_providers.php?';
+    List<String> params = [];
 
-      if (query != null && query.isNotEmpty) {
-        queryParams['q'] = query;
-      }
-      if (categoryId != null) {
-        queryParams['category_id'] = categoryId.toString();
-      }
-      if (minPrice != null) {
-        queryParams['min_price'] = minPrice.toString();
-      }
-      if (maxPrice != null) {
-        queryParams['max_price'] = maxPrice.toString();
-      }
-      if (userLat != null) {
-        queryParams['user_lat'] = userLat.toString();
-      }
-      if (userLng != null) {
-        queryParams['user_lng'] = userLng.toString();
-      }
-      if (maxDistance != null) {
-        queryParams['max_distance'] = maxDistance.toString();
-      }
-      if (sortBy != null) {
-        queryParams['sort_by'] = sortBy;
-      }
-      if (sortOrder != null) {
-        queryParams['sort_order'] = sortOrder;
-      }
-
-      queryParams['page'] = page.toString();
-      queryParams['limit'] = limit.toString();
-
-      final queryString = queryParams.entries
-          .map((e) => '${e.key}=${Uri.encodeComponent(e.value)}')
-          .join('&');
-
-      final data = await _makeRequest(
-        'api/services/advanced_search.php?$queryString',
-      );
-
-      if (data['success'] == true) {
-        var services = <Service>[];
-        if (data['data'] != null) {
-          services = List<Service>.from(
-            data['data'].map((item) => Service.fromJson(item)),
-          );
-        }
-        return {
-          'services': services,
-          'filters': data['filters'] ?? {},
-          'pagination': data['pagination'] ?? {},
-          'total': data['total'] ?? 0,
-        };
-      }
-      return {
-        'services': <Service>[],
-        'filters': {},
-        'pagination': {},
-        'total': 0,
-      };
-    } catch (e) {
-      print('Error in advanced search: $e');
-      return {
-        'services': <Service>[],
-        'filters': {},
-        'pagination': {},
-        'total': 0,
-      };
+    if (categoryId != null) {
+      params.add('category_id=$categoryId');
     }
+
+    if (search != null && search.isNotEmpty) {
+      params.add('search=${Uri.encodeComponent(search)}');
+    }
+
+    if (sortBy != null) {
+      params.add('sort_by=$sortBy');
+    }
+
+    if (sortOrder != null) {
+      params.add('sort_order=$sortOrder');
+    }
+
+    if (limit != null) {
+      params.add('limit=$limit');
+    }
+
+    if (offset != null) {
+      params.add('offset=$offset');
+    }
+
+    endpoint += params.join('&');
+
+    return await _makeRequest(endpoint);
   }
 
-  // Bookings methods
-  static Future<List<BookingModel>> getBookings(
+  // جلب مزودي خدمة معينة
+  static Future<Map<String, dynamic>> getServiceProviders(int serviceId) async {
+    return await _makeRequest(
+      '/api/providers/get_by_service.php?service_id=$serviceId',
+    );
+  }
+
+  // جلب خدمات مزود معين
+  static Future<Map<String, dynamic>> getProviderServices(
+    int providerId, {
+    int? categoryId,
+  }) async {
+    String endpoint = '/api/providers/get_services.php?provider_id=$providerId';
+
+    if (categoryId != null) {
+      endpoint += '&category_id=$categoryId';
+    }
+
+    return await _makeRequest(endpoint);
+  }
+
+  // جلب معلومات مزود معين
+  static Future<Map<String, dynamic>> getProviderProfile(int providerId) async {
+    return await _makeRequest(
+      '/api/providers/get_profile.php?provider_id=$providerId',
+    );
+  }
+
+  // ==================== الحجوزات ====================
+
+  // إنشاء حجز جديد
+  static Future<Map<String, dynamic>> createBooking({
+    required int userId,
+    required int serviceId,
+    required String bookingDate,
+    required double totalAmount,
+    String? notes,
+  }) async {
+    return await _makeRequest(
+      '/api/bookings/create.php',
+      method: 'POST',
+      body: {
+        'user_id': userId,
+        'service_id': serviceId,
+        'booking_date': bookingDate,
+        'total_amount': totalAmount,
+        'notes': notes ?? '',
+      },
+    );
+  }
+
+  // ==================== التقييمات ====================
+
+  // إضافة تقييم جديد
+  static Future<Map<String, dynamic>> createReview(
+    Map<String, dynamic> reviewData,
+  ) async {
+    return await _makeRequest(
+      '/api/reviews/create.php',
+      method: 'POST',
+      body: reviewData,
+    );
+  }
+
+  // جلب تفاصيل الخدمة
+  static Future<Map<String, dynamic>> getServiceDetails(
+    Map<String, dynamic> params,
+  ) async {
+    String endpoint = '/api/services/get_service_details.php';
+    String queryString = params.entries
+        .map((e) => '${e.key}=${Uri.encodeComponent(e.value.toString())}')
+        .join('&');
+
+    if (queryString.isNotEmpty) {
+      endpoint += '?$queryString';
+    }
+
+    return await _makeRequest(endpoint);
+  }
+
+  // التحقق من حالة الحجز للمستخدم
+  static Future<Map<String, dynamic>> checkUserBookingStatus(
+    Map<String, dynamic> params,
+  ) async {
+    String endpoint = '/api/bookings/check_user_booking_status.php';
+    String queryString = params.entries
+        .map((e) => '${e.key}=${Uri.encodeComponent(e.value.toString())}')
+        .join('&');
+
+    if (queryString.isNotEmpty) {
+      endpoint += '?$queryString';
+    }
+
+    return await _makeRequest(endpoint);
+  }
+
+  // ==================== المفضلة ====================
+
+  // إضافة/إزالة من المفضلة
+  static Future<Map<String, dynamic>> toggleFavorite({
+    required int userId,
+    required int serviceId,
+  }) async {
+    return await _makeRequest(
+      '/api/favorites/toggle.php',
+      method: 'POST',
+      body: {'user_id': userId, 'service_id': serviceId},
+    );
+  }
+
+  // جلب مفضلات المستخدم
+  static Future<Map<String, dynamic>> getUserFavorites(int userId) async {
+    return await _makeRequest('/api/favorites/get_all.php?user_id=$userId');
+  }
+
+  // جلب حجوزات المستخدم
+  static Future<Map<String, dynamic>> getUserBookings(
     int userId, {
     String? status,
   }) async {
-    try {
-      String url = 'bookings/get_user_bookings.php?user_id=$userId';
-      if (status != null) {
-        url += '&status=$status';
-      }
-
-      final data = await _makeRequest(url);
-      if (data['success'] == true) {
-        return List<BookingModel>.from(
-          data['data'].map((item) => BookingModel.fromJson(item)),
-        );
-      }
-      return [];
-    } catch (e) {
-      print('Error getting bookings: $e');
-      return [];
+    Map<String, String> queryParams = {'user_id': userId.toString()};
+    if (status != null) {
+      queryParams['status'] = status;
     }
+    return await _makeRequest(
+      '/api/bookings/get_user_bookings.php',
+      queryParams: queryParams,
+    );
   }
 
-  static Future<Map<String, dynamic>> createBooking(
-    Map<String, dynamic> bookingData,
-  ) async {
-    try {
-      final data = await _makeRequest(
-        'bookings/create_booking.php',
-        body: json.encode(bookingData),
-        isPost: true,
-      );
-      return data;
-    } catch (e) {
-      print('Error creating booking: $e');
-      return {'success': false, 'message': e.toString()};
-    }
+  // ==================== الإعلانات ====================
+
+  // جلب الإعلانات النشطة
+  static Future<Map<String, dynamic>> getActiveAds() async {
+    return await _makeRequest('/api/ads/get_active_ads.php');
   }
 
-  static Future<bool> updateBookingStatus(int bookingId, String status) async {
+  // ==================== المصادقة ====================
+
+  // تسجيل الدخول
+  static Future<Map<String, dynamic>> login({
+    required String email,
+    required String password,
+  }) async {
+    return await _makeRequest(
+      '/api/auth/login.php',
+      method: 'POST',
+      body: {'email': email, 'password': password},
+    );
+  }
+
+  // إنشاء حساب جديد
+  static Future<Map<String, dynamic>> register({
+    required String name,
+    required String email,
+    required String password,
+    required String userType,
+    String? phone,
+    String? address,
+    int? categoryId,
+  }) async {
+    Map<String, dynamic> body = {
+      'name': name,
+      'email': email,
+      'password': password,
+      'user_type': userType,
+    };
+
+    if (phone != null) body['phone'] = phone;
+    if (address != null) body['address'] = address;
+    if (categoryId != null) body['category_id'] = categoryId;
+
+    return await _makeRequest(
+      '/api/auth/register.php',
+      method: 'POST',
+      body: body,
+    );
+  }
+
+  // ==================== فحص الحجوزات ====================
+
+  // فحص ما إذا كان المستخدم قد حجز خدمة معينة وأكملها
+  static Future<bool> hasCompletedBooking({
+    required int userId,
+    required int serviceId,
+  }) async {
     try {
-      final data = await _makeRequest(
-        'bookings/update_booking_status.php',
-        body: json.encode({'booking_id': bookingId, 'status': status}),
-        isPost: true,
+      final response = await _makeRequest(
+        '/api/bookings/get_user_bookings.php',
+        queryParams: {
+          'user_id': userId.toString(),
+          'service_id': serviceId.toString(),
+          'status': 'completed',
+        },
       );
-      return data['success'] == true;
+
+      if (response['success'] && response['data'] != null) {
+        final bookings = response['data'] as List;
+        return bookings.isNotEmpty;
+      }
+      return false;
     } catch (e) {
-      print('Error updating booking status: $e');
       return false;
     }
   }
 
+  // ==================== فحص المفضلة ====================
+
+  // فحص ما إذا كانت الخدمة في المفضلة
+  static Future<bool> isServiceFavorite({
+    required int userId,
+    required int serviceId,
+  }) async {
+    try {
+      final response = await getUserFavorites(userId);
+      if (response['success'] && response['data'] != null) {
+        final favorites = response['data'] as List;
+        return favorites.any((favorite) => favorite['service_id'] == serviceId);
+      }
+      return false;
+    } catch (e) {
+      return false;
+    }
+  }
+
+<<<<<<< HEAD
   static Future<bool> cancelBooking(int bookingId) async {
     try {
       final data = await _makeRequest(
@@ -1001,67 +1210,91 @@ class ApiService {
   }
 
   // Reset password method
+=======
+  // ==================== استعادة كلمة المرور ====================
+>>>>>>> cb84a2eea26d79ad48594283002ea73596c659d0
   static Future<bool> resetPassword(
-    String userIdentifier,
+    String identifier,
     String newPassword,
   ) async {
-    try {
-      final data = await _makeRequest(
-        'api/auth/reset_password.php',
-        body: json.encode({
-          'user_identifier': userIdentifier,
-          'new_password': newPassword,
-        }),
-        isPost: true,
-      );
-      return data['success'] == true;
-    } catch (e) {
-      print('Error resetting password: $e');
-      return false;
-    }
+    // يفترض أن endpoint هو /api/auth/reset_password.php
+    final response = await _makeRequest(
+      '/api/auth/reset_password.php',
+      method: 'POST',
+      body: {
+        'identifier': identifier, // بريد أو هاتف
+        'new_password': newPassword,
+      },
+    );
+    return response['success'] == true;
   }
 
-  // Add comment method
+  // ==================== إرسال رمز SMS ====================
+  static Future<bool> sendSMSCode(String phone) async {
+    // يفترض أن endpoint هو /api/auth/send_sms_code.php
+    final response = await _makeRequest(
+      '/api/auth/send_sms_code.php',
+      method: 'POST',
+      body: {'phone': phone},
+    );
+    return response['success'] == true;
+  }
+
+  // ==================== التحقق من رمز SMS ====================
+  static Future<bool> verifyCode(String phone, String code) async {
+    // يفترض أن endpoint هو /api/auth/verify_sms_code.php
+    final response = await _makeRequest(
+      '/api/auth/verify_sms_code.php',
+      method: 'POST',
+      body: {'phone': phone, 'code': code},
+    );
+    return response['success'] == true;
+  }
+
+  // ==================== إضافة تعليق (تعيد توجيهها إلى createReview) ====================
   static Future<bool> addComment(
     int serviceId,
     String comment,
     double rating,
   ) async {
-    try {
-      final data = await _makeRequest(
-        'reviews/add_review.php',
-        body: json.encode({
-          'service_id': serviceId,
-          'comment': comment,
-          'rating': rating,
-        }),
-        isPost: true,
-      );
-      return data['success'] == true;
-    } catch (e) {
-      print('Error adding comment: $e');
-      return false;
-    }
+    // يجب أن يحصل userId من التخزين المحلي أو من السياق
+    // هنا نستخدم userId = 1 كمثال
+    final userId = 1;
+    final reviewData = {
+      'user_id': userId,
+      'service_id': serviceId,
+      'rating': rating.toInt(),
+      'comment': comment,
+    };
+    final response = await createReview(reviewData);
+    return response['success'] == true;
   }
 
-  // Delete account method
-  static Future<Map<String, dynamic>> deleteAccount(
+  // ==================== جلب بيانات المستخدم ====================
+  static Future<Map<String, dynamic>?> getUserProfile(int userId) async {
+    final response = await _makeRequest(
+      '/api/users/get_profile.php?user_id=$userId',
+    );
+    if (response['success'] == true && response['data'] != null) {
+      return response['data'];
+    }
+    return null;
+  }
+
+  // ==================== تحديث الملف الشخصي مع موافقة المشرف ====================
+  static Future<Map<String, dynamic>> updateProfileWithApproval(
     int userId,
-    String password,
+    Map<String, dynamic> profileData,
   ) async {
-    try {
-      final data = await _makeRequest(
-        'api/auth/delete_account.php',
-        body: json.encode({'user_id': userId, 'password': password}),
-        isPost: true,
-      );
-      return data;
-    } catch (e) {
-      print('Error deleting account: $e');
-      return {'success': false, 'message': e.toString()};
-    }
+    final response = await _makeRequest(
+      '/api/users/update_profile_with_approval.php',
+      method: 'POST',
+      body: {'user_id': userId, ...profileData},
+    );
+    return response;
   }
 
+<<<<<<< HEAD
   // Login method
   static Future<Map<String, dynamic>> login({
     required String identifier,
@@ -1141,32 +1374,55 @@ class ApiService {
   static Future<Map<String, dynamic>> resetUserPassword({
     required String email,
     required String code,
+=======
+  // ==================== تحديث كلمة المرور ====================
+  static Future<bool> updatePassword({
+    required int userId,
+    required String currentPassword,
+>>>>>>> cb84a2eea26d79ad48594283002ea73596c659d0
     required String newPassword,
   }) async {
-    try {
-      final data = await _makeRequest(
-        'api/auth/reset_password.php',
-        body: json.encode({
-          'email': email,
-          'code': code,
-          'new_password': newPassword,
-        }),
-        isPost: true,
-      );
-      return data;
-    } catch (e) {
-      print('Error resetting password: $e');
-      return {'success': false, 'message': e.toString()};
-    }
+    final response = await _makeRequest(
+      '/api/auth/update_password.php',
+      method: 'POST',
+      body: {
+        'user_id': userId,
+        'current_password': currentPassword,
+        'new_password': newPassword,
+      },
+    );
+    return response['success'] == true;
   }
 
-  // Test connection method
-  static Future<Map<String, dynamic>> testConnection() async {
-    try {
-      final data = await _makeRequest('test.php');
-      return {'success': true, 'message': 'اتصال ناجح', 'data': data};
-    } catch (e) {
-      return {'success': false, 'message': 'فشل في الاتصال: $e'};
-    }
+  // ==================== تغيير كلمة المرور ====================
+  static Future<Map<String, dynamic>> changePassword(
+    int userId,
+    String currentPassword,
+    String newPassword,
+  ) async {
+    final response = await _makeRequest(
+      '/api/auth/change_password.php',
+      method: 'POST',
+      body: {
+        'user_id': userId,
+        'current_password': currentPassword,
+        'new_password': newPassword,
+      },
+    );
+    return response;
+  }
+
+  // ==================== الانضمام كمزود خدمة ====================
+  static Future<bool> joinAsProvider(
+    String name,
+    String phone,
+    String service,
+  ) async {
+    final response = await _makeRequest(
+      '/api/provider/join_provider.php',
+      method: 'POST',
+      body: {'name': name, 'phone': phone, 'service': service},
+    );
+    return response['success'] == true;
   }
 }

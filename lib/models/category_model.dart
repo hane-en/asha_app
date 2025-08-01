@@ -24,17 +24,76 @@ class CategoryModel {
   });
 
   factory CategoryModel.fromJson(Map<String, dynamic> json) {
+    final title = json['name'] ?? json['title'] ?? '';
+
+    // تحديد الأيقونة واللون بناءً على اسم الفئة
+    final iconAndColor = _getIconAndColor(title);
+
     return CategoryModel(
       id: int.tryParse(json['id'].toString()) ?? 0,
-      title: json['name'] ?? json['title'] ?? '', // يدعم name و title
+      title: title,
       description: json['description'] ?? '',
-      icon: json['icon'] ?? 'category',
-      color: json['color'] ?? '#8e24aa',
-      imageUrl: json['image'] ?? json['image_url'], // يدعم image و image_url
+      icon: iconAndColor['icon']!,
+      color: iconAndColor['color']!,
+      imageUrl: json['image'] ?? json['image_url'],
       servicesCount: int.tryParse(json['services_count'].toString()) ?? 0,
       isActive: json['is_active'] == true || json['is_active'] == 1,
       createdAt: json['created_at'] ?? '',
     );
+  }
+
+  // دالة لتحديد الأيقونة واللون بناءً على اسم الفئة
+  static Map<String, String> _getIconAndColor(String title) {
+    final lowerTitle = title.toLowerCase();
+
+    if (lowerTitle.contains('قاعات') ||
+        lowerTitle.contains('أفراح') ||
+        lowerTitle.contains('حفلات')) {
+      return {
+        'icon': 'celebration',
+        'color': '#8e24aa', // بنفسجي
+      };
+    } else if (lowerTitle.contains('تصوير') ||
+        lowerTitle.contains('فوتو') ||
+        lowerTitle.contains('كاميرا')) {
+      return {
+        'icon': 'camera_alt',
+        'color': '#ff9800', // برتقالي
+      };
+    } else if (lowerTitle.contains('ديكور') ||
+        lowerTitle.contains('تزيين') ||
+        lowerTitle.contains('زينة')) {
+      return {
+        'icon': 'local_florist',
+        'color': '#4caf50', // أخضر
+      };
+    } else if (lowerTitle.contains('جاتوهات') ||
+        lowerTitle.contains('كيك') ||
+        lowerTitle.contains('حلويات')) {
+      return {
+        'icon': 'cake',
+        'color': '#e91e63', // وردي
+      };
+    } else if (lowerTitle.contains('موسيقى') ||
+        lowerTitle.contains('صوت') ||
+        lowerTitle.contains('ساوند')) {
+      return {
+        'icon': 'music_note',
+        'color': '#2196f3', // أزرق
+      };
+    } else if (lowerTitle.contains('فساتين') ||
+        lowerTitle.contains('أزياء') ||
+        lowerTitle.contains('ملابس')) {
+      return {
+        'icon': 'checkroom',
+        'color': '#9c27b0', // بنفسجي غامق
+      };
+    } else {
+      return {
+        'icon': 'category',
+        'color': '#607d8b', // رمادي
+      };
+    }
   }
 
   Map<String, dynamic> toJson() {

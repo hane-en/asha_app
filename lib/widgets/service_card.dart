@@ -182,7 +182,7 @@ class ServiceCard extends StatelessWidget {
         if (onFavorite != null)
           Container(
             decoration: BoxDecoration(
-              color: Colors.white.withValues(alpha: 0.9),
+              color: Colors.white.withOpacity(0.9),
               shape: BoxShape.circle,
             ),
             child: IconButton(
@@ -198,7 +198,7 @@ class ServiceCard extends StatelessWidget {
           const SizedBox(width: 8),
           Container(
             decoration: BoxDecoration(
-              color: Colors.white.withValues(alpha: 0.9),
+              color: Colors.white.withOpacity(0.9),
               shape: BoxShape.circle,
             ),
             child: IconButton(
