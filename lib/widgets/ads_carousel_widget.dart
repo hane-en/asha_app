@@ -6,58 +6,57 @@ import '../routes/app_routes.dart';
 import '../config/config.dart';
 
 class AdsCarouselWidget extends StatefulWidget {
-  const AdsCarouselWidget({super.key});
+  final List<AdModel> ads;
+  
+  const AdsCarouselWidget({
+    super.key,
+    required this.ads,
+  });
 
   @override
   State<AdsCarouselWidget> createState() => _AdsCarouselWidgetState();
 }
 
 class _AdsCarouselWidgetState extends State<AdsCarouselWidget> {
-  List<AdModel> _ads = [];
-  bool _isLoading = true;
-  PageController _pageController = PageController();
+  ScrollController _scrollController = ScrollController();
   Timer? _timer;
-  int _currentPage = 0;
+  double _scrollPosition = 0.0;
+  double _maxScrollExtent = 0.0;
 
   @override
   void initState() {
     super.initState();
-    _loadAds();
+    _startAutoScroll();
   }
 
   @override
   void dispose() {
     _timer?.cancel();
-    _pageController.dispose();
+    _scrollController.dispose();
     super.dispose();
   }
 
-  Future<void> _loadAds() async {
-    try {
-      final ads = await ApiService.getActiveAds();
-      setState(() {
-        _ads = ads;
-        _isLoading = false;
-      });
 
-      // بدء الحركة التلقائية إذا كان هناك إعلانات
-      if (_ads.isNotEmpty) {
-        _startAutoScroll();
-      }
-    } catch (e) {
-      setState(() => _isLoading = false);
-      print('Error loading ads: $e');
-    }
-  }
 
   void _startAutoScroll() {
-    _timer = Timer.periodic(const Duration(seconds: 3), (timer) {
-      if (_ads.isNotEmpty) {
-        _currentPage = (_currentPage + 1) % _ads.length;
-        if (_pageController.hasClients) {
-          _pageController.animateToPage(
-            _currentPage,
-            duration: const Duration(milliseconds: 800),
+    _timer = Timer.periodic(const Duration(milliseconds: 2000), (timer) {
+      if (_scrollController.hasClients && widget.ads.isNotEmpty) {
+        _maxScrollExtent = _scrollController.position.maxScrollExtent;
+        
+        if (_scrollPosition >= _maxScrollExtent) {
+          // العودة إلى البداية
+          _scrollPosition = 0.0;
+          _scrollController.animateTo(
+            0.0,
+            duration: const Duration(milliseconds: 500),
+            curve: Curves.easeInOut,
+          );
+        } else {
+          // التحرك للأمام
+          _scrollPosition += 150.0; // سرعة متوسطة
+          _scrollController.animateTo(
+            _scrollPosition,
+            duration: const Duration(milliseconds: 1000),
             curve: Curves.easeInOut,
           );
         }
@@ -67,16 +66,19 @@ class _AdsCarouselWidgetState extends State<AdsCarouselWidget> {
 
   void _onAdTap(AdModel ad) {
     // إذا كان الإعلان يحتوي على رابط، انتقل إليه
-    if (ad.hasLink) {
+    if (ad.link != null && ad.link!.isNotEmpty) {
       // يمكن إضافة منطق للانتقال إلى الرابط
       print('Navigate to: ${ad.link}');
     } else {
-      // انتقل إلى صفحة مزود الخدمة أو صفحة الخدمات
+      // انتقل إلى صفحة مزود الخدمة إذا كان موجود
       if (ad.providerId != null) {
         Navigator.pushNamed(
           context,
-          AppRoutes.serviceSearch,
-          arguments: {'provider_id': ad.providerId},
+          AppRoutes.providerServices,
+          arguments: {
+            'provider_id': ad.providerId,
+            'provider_name': ad.providerName ?? 'مزود الخدمة',
+          },
         );
       }
     }
@@ -84,19 +86,12 @@ class _AdsCarouselWidgetState extends State<AdsCarouselWidget> {
 
   @override
   Widget build(BuildContext context) {
-    if (_isLoading) {
-      return const SizedBox(
-        height: 100,
-        child: Center(child: CircularProgressIndicator()),
-      );
-    }
-
-    if (_ads.isEmpty) {
+    if (widget.ads.isEmpty) {
       return const SizedBox.shrink();
     }
 
     return Container(
-      height: 100,
+      height: 120,
       margin: const EdgeInsets.symmetric(vertical: 4),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -117,53 +112,22 @@ class _AdsCarouselWidgetState extends State<AdsCarouselWidget> {
                 ),
                 const Spacer(),
                 Text(
-                  '${_ads.length} إعلان',
+                  '${widget.ads.length} إعلان',
                   style: TextStyle(fontSize: 11, color: Colors.grey[600]),
                 ),
               ],
             ),
           ),
           Expanded(
-            child: Stack(
-              children: [
-                PageView.builder(
-                  controller: _pageController,
-                  onPageChanged: (index) {
-                    setState(() {
-                      _currentPage = index;
-                    });
-                  },
-                  itemCount: _ads.length,
-                  itemBuilder: (context, index) {
-                    final ad = _ads[index];
-                    return _buildAdCard(ad);
-                  },
-                ),
-                // مؤشرات الصفحات
-                if (_ads.length > 1)
-                  Positioned(
-                    bottom: 2,
-                    left: 0,
-                    right: 0,
-                    child: Row(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      children: List.generate(
-                        _ads.length,
-                        (index) => Container(
-                          width: 6,
-                          height: 6,
-                          margin: const EdgeInsets.symmetric(horizontal: 2),
-                          decoration: BoxDecoration(
-                            shape: BoxShape.circle,
-                            color: _currentPage == index
-                                ? Colors.purple
-                                : Colors.grey.withOpacity(0.5),
-                          ),
-                        ),
-                      ),
-                    ),
-                  ),
-              ],
+            child: ListView.builder(
+              controller: _scrollController,
+              scrollDirection: Axis.horizontal,
+              padding: const EdgeInsets.symmetric(horizontal: 8),
+              itemCount: widget.ads.length,
+              itemBuilder: (context, index) {
+                final ad = widget.ads[index];
+                return _buildAdCard(ad);
+              },
             ),
           ),
         ],
@@ -173,10 +137,10 @@ class _AdsCarouselWidgetState extends State<AdsCarouselWidget> {
 
   Widget _buildAdCard(AdModel ad) {
     return Container(
-      width: double.infinity,
-      margin: const EdgeInsets.symmetric(horizontal: 16),
+      width: 160, // عرض ثابت لكل إعلان
+      margin: const EdgeInsets.symmetric(horizontal: 8),
       child: Card(
-        elevation: 4,
+        elevation: 3,
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
         child: InkWell(
           onTap: () => _onAdTap(ad),
@@ -190,7 +154,7 @@ class _AdsCarouselWidgetState extends State<AdsCarouselWidget> {
                   top: Radius.circular(12),
                 ),
                 child: Container(
-                  height: 60,
+                  height: 80,
                   width: double.infinity,
                   decoration: BoxDecoration(color: Colors.grey[200]),
                   child: ad.image.isNotEmpty
@@ -219,48 +183,50 @@ class _AdsCarouselWidgetState extends State<AdsCarouselWidget> {
                 ),
               ),
               // معلومات الإعلان
-              Padding(
-                padding: const EdgeInsets.all(6),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      ad.title,
-                      style: const TextStyle(
-                        fontSize: 11,
-                        fontWeight: FontWeight.bold,
-                      ),
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
-                    ),
-                    if (ad.providerName != null) ...[
-                      const SizedBox(height: 1),
+              Expanded(
+                child: Padding(
+                  padding: const EdgeInsets.all(8),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
                       Text(
-                        'بواسطة: ${ad.providerName}',
-                        style: TextStyle(fontSize: 9, color: Colors.grey[600]),
-                        maxLines: 1,
+                        ad.title,
+                        style: const TextStyle(
+                          fontSize: 12,
+                          fontWeight: FontWeight.bold,
+                        ),
+                        maxLines: 2,
                         overflow: TextOverflow.ellipsis,
                       ),
-                    ],
-                    const SizedBox(height: 2),
-                    Row(
-                      children: [
-                        Icon(
-                          Icons.visibility,
-                          size: 10,
-                          color: Colors.grey[600],
-                        ),
-                        const SizedBox(width: 2),
+                      const SizedBox(height: 2),
+                      if (ad.providerName != null) ...[
                         Text(
-                          'انقر للتفاصيل',
-                          style: TextStyle(
-                            fontSize: 8,
+                          'بواسطة: ${ad.providerName}',
+                          style: TextStyle(fontSize: 10, color: Colors.grey[600]),
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                        ),
+                        const SizedBox(height: 2),
+                      ],
+                      Row(
+                        children: [
+                          Icon(
+                            Icons.visibility,
+                            size: 12,
                             color: Colors.grey[600],
                           ),
-                        ),
-                      ],
-                    ),
-                  ],
+                          const SizedBox(width: 4),
+                          Text(
+                            'انقر للتفاصيل',
+                            style: TextStyle(
+                              fontSize: 9,
+                              color: Colors.grey[600],
+                            ),
+                          ),
+                        ],
+                      ),
+                    ],
+                  ),
                 ),
               ),
             ],

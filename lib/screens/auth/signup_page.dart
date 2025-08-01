@@ -11,7 +11,9 @@ import '../../config/config.dart';
 import '../../routes/app_routes.dart';
 
 class SignupPage extends StatefulWidget {
-  const SignupPage({super.key});
+  final String? source; // مصدر الطلب: 'drawer' أو 'booking' أو null للافتراضي
+
+  const SignupPage({super.key, this.source});
 
   @override
   _SignupPageState createState() => _SignupPageState();
@@ -123,11 +125,19 @@ class _SignupPageState extends State<SignupPage> {
       if (result['success'] == true) {
         if (selectedRole == 'user') {
           _showMessage('✅ تم إنشاء الحساب بنجاح! مرحباً بك كمستخدم.');
-          Navigator.pushNamedAndRemoveUntil(
-            context,
-            AppRoutes.userHome,
-            (route) => false,
-          );
+
+          // التوجيه الذكي حسب مصدر الطلب
+          if (widget.source == 'booking') {
+            // إذا جاء من صفحة الحجز، نرجع إلى الصفحة السابقة
+            Navigator.pop(context, true);
+          } else {
+            // إذا جاء من drawer أو أي مكان آخر، نذهب للصفحة الرئيسية
+            Navigator.pushNamedAndRemoveUntil(
+              context,
+              AppRoutes.userHome,
+              (route) => false,
+            );
+          }
         } else {
           _showMessage(
             '✅ تم إنشاء الحساب بنجاح! تم إرسال طلب انضمامك كمزود خدمة للمشرف للمراجعة.',
@@ -396,8 +406,8 @@ class _SignupPageState extends State<SignupPage> {
                             FilteringTextInputFormatter.digitsOnly,
                           ],
                           decoration: InputDecoration(
-                            labelText: 'رقم الحساب اليمني في بنك الكريمي *',
-                            hintText: 'أدخل رقم الحساب اليمني',
+                            labelText: 'رقم الحساب في بنك الكريمي *',
+                            hintText: 'أدخل رقم الحساب في بنك الكريمي',
                             prefixIcon: const Icon(Icons.account_balance),
                             border: OutlineInputBorder(
                               borderRadius: BorderRadius.circular(12),
@@ -408,10 +418,10 @@ class _SignupPageState extends State<SignupPage> {
                           validator: (value) {
                             if (selectedRole == 'provider') {
                               if (value == null || value.isEmpty) {
-                                return 'رقم الحساب اليمني مطلوب لمزودي الخدمات';
+                                return 'رقم الحساب في بنك الكريمي مطلوب لمزودي الخدمات';
                               }
-                              if (value.length < 10) {
-                                return 'رقم الحساب يجب أن يكون 10 أرقام على الأقل';
+                              if (!RegExp(r'^3\d{9}$').hasMatch(value)) {
+                                return 'رقم الحساب يجب أن يبدأ برقم 3 ويتكون من 10 أرقام بالضبط';
                               }
                             }
                             return null;

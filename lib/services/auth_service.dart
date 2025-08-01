@@ -40,18 +40,18 @@ class AuthService {
   }
 
   Future<Map<String, dynamic>> login({
-    required String email,
+    required String identifier,
     required String password,
     String? userType,
   }) async {
     final data = {
-      'email': email,
+      'identifier': identifier,
       'password': password,
       if (userType != null) 'user_type': userType,
     };
 
     final response = await ApiService.login(
-      email: email,
+      identifier: identifier,
       password: password,
       userType: userType,
     );

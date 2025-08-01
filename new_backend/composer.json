@@ -1,0 +1,45 @@
+{
+    "name": "asha-app/backend",
+    "description": "Asha App Backend API",
+    "type": "project",
+    "keywords": ["php", "api", "backend", "asha-app"],
+    "license": "MIT",
+    "authors": [
+        {
+            "name": "Asha App Team",
+            "email": "info@asha-app.com"
+        }
+    ],
+    "require": {
+        "php": ">=7.4",
+        "firebase/php-jwt": "^6.0",
+        "vlucas/phpdotenv": "^5.0",
+        "monolog/monolog": "^2.0"
+    },
+    "require-dev": {
+        "phpunit/phpunit": "^9.0",
+        "symfony/var-dumper": "^5.0"
+    },
+    "autoload": {
+        "psr-4": {
+            "AshaApp\\": "src/"
+        }
+    },
+    "autoload-dev": {
+        "psr-4": {
+            "AshaApp\\Tests\\": "tests/"
+        }
+    },
+    "scripts": {
+        "test": "phpunit",
+        "post-install-cmd": [
+            "php -r \"copy('.env.example', '.env');\""
+        ]
+    },
+    "config": {
+        "optimize-autoloader": true,
+        "sort-packages": true
+    },
+    "minimum-stability": "stable",
+    "prefer-stable": true
+} 

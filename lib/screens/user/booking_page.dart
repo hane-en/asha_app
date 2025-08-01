@@ -1,10 +1,16 @@
 import 'package:flutter/material.dart';
-import '../../models/service_model.dart';
+import 'package:flutter/services.dart';
+import 'package:intl/intl.dart';
+import 'package:shared_preferences/shared_preferences.dart';
+import '../../config/config.dart';
 import '../../services/api_service.dart';
+import '../../utils/helpers.dart';
+import '../../utils/constants.dart';
 
 class BookingPage extends StatefulWidget {
-  const BookingPage({super.key, this.service});
-  final Service? service;
+  final Map<String, dynamic> service;
+
+  const BookingPage({Key? key, required this.service}) : super(key: key);
 
   @override
   State<BookingPage> createState() => _BookingPageState();
@@ -12,111 +18,74 @@ class BookingPage extends StatefulWidget {
 
 class _BookingPageState extends State<BookingPage> {
   final _formKey = GlobalKey<FormState>();
-  final _nameController = TextEditingController();
-  final _phoneController = TextEditingController();
-  final _dateController = TextEditingController();
-  final _timeController = TextEditingController();
-  final _notesController = TextEditingController();
+  final _noteController = TextEditingController();
+  final _kareemiTransactionController = TextEditingController();
 
   DateTime? _selectedDate;
   TimeOfDay? _selectedTime;
+  String _selectedPaymentMethod = Config.paymentMethodCash;
   bool _isLoading = false;
-  bool _isPaid = false;
-  String _selectedPaymentMethod = 'cash';
-  Map<String, dynamic>? _providerInfo;
+  bool _showKareemiFields = false;
 
   @override
   void initState() {
     super.initState();
-    // تعبئة البيانات الافتراضية إذا كانت متوفرة
-    if (widget.service != null) {
-      _nameController.text = widget.service!.providerName ?? '';
-    }
-    _loadProviderInfo();
+    _selectedPaymentMethod = Config.paymentMethodCash;
+    _updateKareemiFields();
   }
 
-  @override
-  void dispose() {
-    _nameController.dispose();
-    _phoneController.dispose();
-    _dateController.dispose();
-    _timeController.dispose();
-    _notesController.dispose();
-    super.dispose();
+  void _updateKareemiFields() {
+    setState(() {
+      _showKareemiFields = _selectedPaymentMethod == Config.paymentMethodKareemi;
+    });
   }
 
-  Future<void> _selectDate() async {
-    final picked = await showDatePicker(
+  Future<int?> getUserId() async {
+    final prefs = await SharedPreferences.getInstance();
+    return prefs.getInt('user_id');
+  }
+
+  Future<void> _selectDate(BuildContext context) async {
+    final DateTime? picked = await showDatePicker(
       context: context,
       initialDate: DateTime.now().add(const Duration(days: 1)),
       firstDate: DateTime.now(),
       lastDate: DateTime.now().add(const Duration(days: 365)),
-      builder: (context, child) => Theme(
-        data: Theme.of(context).copyWith(
-          colorScheme: const ColorScheme.light(
-            primary: Colors.purple,
-            onPrimary: Colors.white,
-          ),
-        ),
-        child: child!,
-      ),
     );
-    if (picked != null) {
+    if (picked != null && picked != _selectedDate) {
       setState(() {
         _selectedDate = picked;
-        _dateController.text = '${picked.day}/${picked.month}/${picked.year}';
       });
     }
   }
 
-  Future<void> _selectTime() async {
-    final picked = await showTimePicker(
+  Future<void> _selectTime(BuildContext context) async {
+    final TimeOfDay? picked = await showTimePicker(
       context: context,
       initialTime: TimeOfDay.now(),
-      builder: (context, child) => Theme(
-        data: Theme.of(context).copyWith(
-          colorScheme: const ColorScheme.light(
-            primary: Colors.purple,
-            onPrimary: Colors.white,
-          ),
-        ),
-        child: child!,
-      ),
     );
-    if (picked != null) {
+    if (picked != null && picked != _selectedTime) {
       setState(() {
         _selectedTime = picked;
-        _timeController.text = picked.format(context);
       });
     }
   }
 
-  Future<void> _loadProviderInfo() async {
-    if (widget.service == null) return;
-
-    try {
-      final response = await ApiService.getProviderInfo(widget.service!.id);
-      if (response['success'] == true) {
-        setState(() {
-          _providerInfo = response['data'];
-        });
-      }
-    } catch (e) {
-      print('Error loading provider info: $e');
-    }
-  }
-
-  Future<void> _confirmBooking() async {
+  Future<void> _createBooking() async {
     if (!_formKey.currentState!.validate()) {
       return;
     }
 
-    if (_selectedDate == null || _selectedTime == null) {
+    if (_selectedDate == null) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('يرجى اختيار التاريخ والوقت'),
-          backgroundColor: Colors.red,
-        ),
+        const SnackBar(content: Text('يرجى اختيار التاريخ')),
+      );
+      return;
+    }
+
+    if (_selectedTime == null) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('يرجى اختيار الوقت')),
       );
       return;
     }
@@ -126,483 +95,336 @@ class _BookingPageState extends State<BookingPage> {
     });
 
     try {
-      // إرسال البيانات إلى API
+      final userId = await getUserId();
+      if (userId == null) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('يرجى تسجيل الدخول أولاً')),
+        );
+        setState(() {
+          _isLoading = false;
+        });
+        return;
+      }
       final bookingData = {
-        'service_id': widget.service!.id,
-        'booking_date': _selectedDate!.toIso8601String().split('T')[0],
-        'booking_time': _selectedTime!.format(context),
+        'user_id': userId,
+        'service_id': widget.service['id'],
+        'date': DateFormat('yyyy-MM-dd').format(_selectedDate!),
+        'time': _selectedTime!.format(context),
+        'total_price': widget.service['price'].toString(),
         'payment_method': _selectedPaymentMethod,
-        'notes': _notesController.text,
+        'note': _noteController.text.trim(),
       };
+
+      // إضافة رقم معاملة الكريمي إذا كانت طريقة الدفع هي البنك
+      if (_selectedPaymentMethod == Config.paymentMethodKareemi) {
+        if (_kareemiTransactionController.text.trim().isEmpty) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(content: Text('يرجى إدخال رقم معاملة الكريمي')),
+          );
+          setState(() {
+            _isLoading = false;
+          });
+          return;
+        }
+        bookingData['kareemi_transaction_id'] = _kareemiTransactionController.text.trim();
+      }
 
       final response = await ApiService.createBooking(bookingData);
 
-      if (response['success'] == true) {
-        setState(() {
-          _isPaid = true;
-          _isLoading = false;
-        });
-
-        String message = '';
-        if (_selectedPaymentMethod == 'cash') {
-          message = 'تم الحجز بنجاح! سيتم التواصل معك قريباً لتأكيد الموعد.';
+      if (response['success']) {
+        // إظهار معلومات بنك الكريمي إذا كانت طريقة الدفع هي البنك
+        if (_selectedPaymentMethod == Config.paymentMethodKareemi) {
+          _showKareemiInfo(response['data']);
         } else {
-          message =
-              'شكراً لكم على اختيار خدمتنا! سوف يتم التأكد من الإيداع وسوف نرسل إليكم إشعار حال التأكد وتأكيد حجزكم.';
-        }
-
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text(message), backgroundColor: Colors.green),
-        );
-
-        // العودة للصفحة السابقة بعد ثانيتين
-        Future.delayed(const Duration(seconds: 2), () {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(content: Text('تم إنشاء الحجز بنجاح')),
+          );
           Navigator.pop(context);
-        });
+        }
       } else {
-        throw Exception(response['message'] ?? 'فشل في إنشاء الحجز');
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text(response['error'] ?? 'حدث خطأ أثناء إنشاء الحجز')),
+        );
       }
     } catch (e) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('حدث خطأ في الاتصال')),
+      );
+    } finally {
       setState(() {
         _isLoading = false;
       });
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text('خطأ في الحجز: $e'),
-          backgroundColor: Colors.red,
-        ),
-      );
     }
   }
 
-  @override
-  Widget build(BuildContext context) => WillPopScope(
-    onWillPop: () async {
-      Navigator.pushNamedAndRemoveUntil(
-        context,
-        '/user_home',
-        (route) => false,
-      );
-      return false;
-    },
-    child: SafeArea(
-      child: Scaffold(
-        appBar: AppBar(
-          title: const Text('حجز الخدمة'),
-          backgroundColor: Colors.purple,
-          foregroundColor: Colors.white,
-          elevation: 0,
-        ),
-        body: Container(
-          decoration: const BoxDecoration(
-            gradient: LinearGradient(
-              begin: Alignment.topCenter,
-              end: Alignment.bottomCenter,
-              colors: [Colors.purple, Colors.purpleAccent],
-            ),
+  void _showKareemiInfo(Map<String, dynamic> bookingData) {
+    showDialog(
+      context: context,
+      barrierDismissible: false,
+      builder: (BuildContext context) {
+        return AlertDialog(
+          title: const Text('معلومات الدفع عبر بنك الكريمي'),
+          content: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text('رقم حساب مزود الخدمة: ${bookingData['kareemi_info']['provider_account']}'),
+              const SizedBox(height: 8),
+              Text('رقم المعاملة: ${bookingData['kareemi_info']['transaction_id']}'),
+              const SizedBox(height: 16),
+              const Text(
+                'تعليمات الدفع:',
+                style: TextStyle(fontWeight: FontWeight.bold),
+              ),
+              const SizedBox(height: 8),
+              const Text(
+                '1. قم بتحويل المبلغ إلى الحساب المذكور أعلاه\n'
+                '2. احتفظ بإثبات التحويل\n'
+                '3. سيتم تأكيد الحجز بعد التحقق من الدفع',
+              ),
+            ],
           ),
-          child: SafeArea(
-            child: Column(
-              children: [
-                // معلومات الخدمة
-                if (widget.service != null)
-                  Container(
-                    margin: const EdgeInsets.all(16),
-                    padding: const EdgeInsets.all(16),
-                    decoration: BoxDecoration(
-                      color: Colors.white,
-                      borderRadius: BorderRadius.circular(12),
-                      boxShadow: [
-                        BoxShadow(
-                          color: Colors.black.withOpacity(0.1),
-                          blurRadius: 10,
-                          offset: const Offset(0, 5),
-                        ),
-                      ],
-                    ),
-                    child: Row(
-                      children: [
-                        if (widget.service!.images.isNotEmpty)
-                          ClipRRect(
-                            borderRadius: BorderRadius.circular(8),
-                            child: Image.network(
-                              widget.service!.images.first,
-                              width: 60,
-                              height: 60,
-                              fit: BoxFit.cover,
-                              errorBuilder: (context, error, stackTrace) {
-                                return Container(
-                                  width: 60,
-                                  height: 60,
-                                  decoration: BoxDecoration(
-                                    color: Colors.purple[100],
-                                    borderRadius: BorderRadius.circular(8),
-                                  ),
-                                  child: const Icon(
-                                    Icons.image,
-                                    color: Colors.purple,
-                                  ),
-                                );
-                              },
-                            ),
-                          ),
-                        const SizedBox(width: 12),
-                        Expanded(
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              Text(
-                                widget.service!.title,
-                                style: const TextStyle(
-                                  fontSize: 16,
-                                  fontWeight: FontWeight.bold,
-                                ),
-                              ),
-                              const SizedBox(height: 4),
-                              Text(
-                                widget.service!.providerName ?? '',
-                                style: TextStyle(
-                                  fontSize: 14,
-                                  color: Colors.grey[600],
-                                ),
-                              ),
-                              const SizedBox(height: 4),
-                              Text(
-                                '${widget.service!.price.toStringAsFixed(2)} ريال',
-                                style: const TextStyle(
-                                  fontSize: 16,
-                                  fontWeight: FontWeight.bold,
-                                  color: Colors.purple,
-                                ),
-                              ),
-                            ],
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
+          actions: [
+            TextButton(
+              onPressed: () {
+                Navigator.of(context).pop();
+                Navigator.pop(context);
+              },
+              child: const Text('تم'),
+            ),
+          ],
+        );
+      },
+    );
+  }
 
-                // نموذج الحجز
-                Expanded(
-                  child: Container(
-                    margin: const EdgeInsets.all(16),
-                    padding: const EdgeInsets.all(16),
-                    decoration: BoxDecoration(
-                      color: Colors.white,
-                      borderRadius: BorderRadius.circular(12),
-                      boxShadow: [
-                        BoxShadow(
-                          color: Colors.black.withOpacity(0.1),
-                          blurRadius: 10,
-                          offset: const Offset(0, 5),
-                        ),
-                      ],
-                    ),
-                    child: Form(
-                      key: _formKey,
-                      child: SingleChildScrollView(
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            const Text(
-                              'معلومات الحجز',
-                              style: TextStyle(
-                                fontSize: 20,
-                                fontWeight: FontWeight.bold,
-                                color: Colors.purple,
-                              ),
-                            ),
-                            const SizedBox(height: 20),
-
-                            // الاسم
-                            TextFormField(
-                              controller: _nameController,
-                              decoration: InputDecoration(
-                                labelText: 'الاسم الكامل',
-                                prefixIcon: const Icon(
-                                  Icons.person,
-                                  color: Colors.purple,
-                                ),
-                                border: OutlineInputBorder(
-                                  borderRadius: BorderRadius.circular(8),
-                                ),
-                                focusedBorder: OutlineInputBorder(
-                                  borderRadius: BorderRadius.circular(8),
-                                  borderSide: const BorderSide(
-                                    color: Colors.purple,
-                                    width: 2,
-                                  ),
-                                ),
-                              ),
-                              validator: (value) {
-                                if (value == null || value.isEmpty) {
-                                  return 'يرجى إدخال الاسم';
-                                }
-                                return null;
-                              },
-                            ),
-                            const SizedBox(height: 16),
-
-                            // رقم الهاتف
-                            TextFormField(
-                              controller: _phoneController,
-                              keyboardType: TextInputType.phone,
-                              decoration: InputDecoration(
-                                labelText: 'رقم الهاتف',
-                                prefixIcon: const Icon(
-                                  Icons.phone,
-                                  color: Colors.purple,
-                                ),
-                                border: OutlineInputBorder(
-                                  borderRadius: BorderRadius.circular(8),
-                                ),
-                                focusedBorder: OutlineInputBorder(
-                                  borderRadius: BorderRadius.circular(8),
-                                  borderSide: const BorderSide(
-                                    color: Colors.purple,
-                                    width: 2,
-                                  ),
-                                ),
-                              ),
-                              validator: (value) {
-                                if (value == null || value.isEmpty) {
-                                  return 'يرجى إدخال رقم الهاتف';
-                                }
-                                return null;
-                              },
-                            ),
-                            const SizedBox(height: 16),
-
-                            // التاريخ
-                            TextFormField(
-                              controller: _dateController,
-                              readOnly: true,
-                              onTap: _selectDate,
-                              decoration: InputDecoration(
-                                labelText: 'تاريخ الحجز',
-                                prefixIcon: const Icon(
-                                  Icons.calendar_today,
-                                  color: Colors.purple,
-                                ),
-                                border: OutlineInputBorder(
-                                  borderRadius: BorderRadius.circular(8),
-                                ),
-                                focusedBorder: OutlineInputBorder(
-                                  borderRadius: BorderRadius.circular(8),
-                                  borderSide: const BorderSide(
-                                    color: Colors.purple,
-                                    width: 2,
-                                  ),
-                                ),
-                              ),
-                            ),
-                            const SizedBox(height: 16),
-
-                            // طريقة الدفع
-                            const Text(
-                              'طريقة الدفع',
-                              style: TextStyle(
-                                fontSize: 16,
-                                fontWeight: FontWeight.bold,
-                                color: Colors.purple,
-                              ),
-                            ),
-                            const SizedBox(height: 8),
-
-                            // اختيار طريقة الدفع
-                            Row(
-                              children: [
-                                Expanded(
-                                  child: RadioListTile<String>(
-                                    title: const Text('كاش'),
-                                    value: 'cash',
-                                    groupValue: _selectedPaymentMethod,
-                                    onChanged: (value) {
-                                      setState(() {
-                                        _selectedPaymentMethod = value!;
-                                      });
-                                    },
-                                    activeColor: Colors.purple,
-                                  ),
-                                ),
-                                Expanded(
-                                  child: RadioListTile<String>(
-                                    title: const Text('بنك الكريمي'),
-                                    value: 'bank_transfer',
-                                    groupValue: _selectedPaymentMethod,
-                                    onChanged: (value) {
-                                      setState(() {
-                                        _selectedPaymentMethod = value!;
-                                      });
-                                    },
-                                    activeColor: Colors.purple,
-                                  ),
-                                ),
-                              ],
-                            ),
-
-                            // معلومات حساب الكريمي
-                            if (_selectedPaymentMethod == 'bank_transfer' &&
-                                _providerInfo != null) ...[
-                              const SizedBox(height: 16),
-                              Container(
-                                padding: const EdgeInsets.all(16),
-                                decoration: BoxDecoration(
-                                  color: Colors.blue[50],
-                                  borderRadius: BorderRadius.circular(8),
-                                  border: Border.all(color: Colors.blue[200]!),
-                                ),
-                                child: Column(
-                                  crossAxisAlignment: CrossAxisAlignment.start,
-                                  children: [
-                                    const Text(
-                                      'معلومات الحساب البنكي',
-                                      style: TextStyle(
-                                        fontSize: 16,
-                                        fontWeight: FontWeight.bold,
-                                        color: Colors.blue,
-                                      ),
-                                    ),
-                                    const SizedBox(height: 8),
-                                    Text(
-                                      'رقم الحساب: ${_providerInfo!['kuraimi_account'] ?? 'غير متوفر'}',
-                                      style: const TextStyle(fontSize: 14),
-                                    ),
-                                    Text(
-                                      'صاحب الحساب: ${_providerInfo!['kuraimi_account_holder'] ?? 'غير متوفر'}',
-                                      style: const TextStyle(fontSize: 14),
-                                    ),
-                                    const SizedBox(height: 8),
-                                    const Text(
-                                      'قم بإيداع المبلغ المطلوب لهذا الرقم',
-                                      style: TextStyle(
-                                        fontSize: 12,
-                                        color: Colors.blue,
-                                        fontWeight: FontWeight.bold,
-                                      ),
-                                    ),
-                                  ],
-                                ),
-                              ),
-                            ],
-
-                            const SizedBox(height: 16),
-
-                            // الوقت
-                            TextFormField(
-                              controller: _timeController,
-                              readOnly: true,
-                              onTap: _selectTime,
-                              decoration: InputDecoration(
-                                labelText: 'وقت الحجز',
-                                prefixIcon: const Icon(
-                                  Icons.access_time,
-                                  color: Colors.purple,
-                                ),
-                                border: OutlineInputBorder(
-                                  borderRadius: BorderRadius.circular(8),
-                                ),
-                                focusedBorder: OutlineInputBorder(
-                                  borderRadius: BorderRadius.circular(8),
-                                  borderSide: const BorderSide(
-                                    color: Colors.purple,
-                                    width: 2,
-                                  ),
-                                ),
-                              ),
-                            ),
-                            const SizedBox(height: 16),
-
-                            // ملاحظات
-                            TextFormField(
-                              controller: _notesController,
-                              maxLines: 3,
-                              decoration: InputDecoration(
-                                labelText: 'ملاحظات إضافية (اختياري)',
-                                prefixIcon: const Icon(
-                                  Icons.note,
-                                  color: Colors.purple,
-                                ),
-                                border: OutlineInputBorder(
-                                  borderRadius: BorderRadius.circular(8),
-                                ),
-                                focusedBorder: OutlineInputBorder(
-                                  borderRadius: BorderRadius.circular(8),
-                                  borderSide: const BorderSide(
-                                    color: Colors.purple,
-                                    width: 2,
-                                  ),
-                                ),
-                              ),
-                            ),
-                            const SizedBox(height: 24),
-
-                            // زر الحجز
-                            SizedBox(
-                              width: double.infinity,
-                              height: 50,
-                              child: ElevatedButton(
-                                onPressed: _isLoading ? null : _confirmBooking,
-                                style: ElevatedButton.styleFrom(
-                                  backgroundColor: Colors.purple,
-                                  foregroundColor: Colors.white,
-                                  shape: RoundedRectangleBorder(
-                                    borderRadius: BorderRadius.circular(8),
-                                  ),
-                                  elevation: 2,
-                                ),
-                                child: _isLoading
-                                    ? const CircularProgressIndicator(
-                                        color: Colors.white,
-                                      )
-                                    : const Text(
-                                        'تأكيد الحجز',
-                                        style: TextStyle(
-                                          fontSize: 16,
-                                          fontWeight: FontWeight.bold,
-                                        ),
-                                      ),
-                              ),
-                            ),
-
-                            if (_isPaid) ...[
-                              const SizedBox(height: 16),
-                              Container(
-                                padding: const EdgeInsets.all(12),
-                                decoration: BoxDecoration(
-                                  color: Colors.green[50],
-                                  borderRadius: BorderRadius.circular(8),
-                                  border: Border.all(color: Colors.green),
-                                ),
-                                child: const Row(
-                                  children: [
-                                    Icon(
-                                      Icons.check_circle,
-                                      color: Colors.green,
-                                    ),
-                                    SizedBox(width: 8),
-                                    Text(
-                                      'تم الحجز بنجاح! ✅',
-                                      style: TextStyle(
-                                        color: Colors.green,
-                                        fontWeight: FontWeight.bold,
-                                      ),
-                                    ),
-                                  ],
-                                ),
-                              ),
-                            ],
-                          ],
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      appBar: AppBar(
+        title: const Text('حجز الخدمة'),
+        backgroundColor: AppColors.primaryColor,
+        foregroundColor: Colors.white,
+      ),
+      body: SingleChildScrollView(
+        padding: const EdgeInsets.all(16),
+        child: Form(
+          key: _formKey,
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              // معلومات الخدمة
+              Card(
+                child: Padding(
+                  padding: const EdgeInsets.all(16),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        widget.service['title'],
+                        style: const TextStyle(
+                          fontSize: 18,
+                          fontWeight: FontWeight.bold,
                         ),
                       ),
+                      const SizedBox(height: 8),
+                      Text(
+                        'السعر: ${widget.service['price']} ريال',
+                        style: const TextStyle(
+                          fontSize: 16,
+                          color: Colors.green,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+              const SizedBox(height: 16),
+
+              // اختيار التاريخ
+              Card(
+                child: ListTile(
+                  leading: const Icon(Icons.calendar_today),
+                  title: const Text('اختر التاريخ'),
+                  subtitle: Text(
+                    _selectedDate != null
+                        ? DateFormat('yyyy/MM/dd', 'ar').format(_selectedDate!)
+                        : 'لم يتم اختيار تاريخ',
+                  ),
+                  onTap: () => _selectDate(context),
+                ),
+              ),
+              const SizedBox(height: 16),
+
+              // اختيار الوقت
+              Card(
+                child: ListTile(
+                  leading: const Icon(Icons.access_time),
+                  title: const Text('اختر الوقت'),
+                  subtitle: Text(
+                    _selectedTime != null
+                        ? _selectedTime!.format(context)
+                        : 'لم يتم اختيار وقت',
+                  ),
+                  onTap: () => _selectTime(context),
+                ),
+              ),
+              const SizedBox(height: 16),
+
+              // طريقة الدفع
+              Card(
+                child: Padding(
+                  padding: const EdgeInsets.all(16),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      const Text(
+                        'طريقة الدفع',
+                        style: TextStyle(
+                          fontSize: 16,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                      const SizedBox(height: 8),
+                      ...Config.paymentMethods.asMap().entries.map((entry) {
+                        final index = entry.key;
+                        final method = entry.value;
+                        final value = index == 0 ? Config.paymentMethodCash : Config.paymentMethodKareemi;
+                        return RadioListTile<String>(
+                          title: Text(method),
+                          value: value,
+                          groupValue: _selectedPaymentMethod,
+                          onChanged: (newValue) {
+                            setState(() {
+                              _selectedPaymentMethod = newValue!;
+                              _updateKareemiFields();
+                            });
+                          },
+                        );
+                      }).toList(),
+                      const SizedBox(height: 8),
+                      const Text(
+                        'يرجى المسارعة لدفع رسوم الحجز خلال 8 ساعات أو سيتم رفض طلبك.',
+                        style: TextStyle(color: Colors.red, fontWeight: FontWeight.bold),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+              const SizedBox(height: 16),
+
+              // حقول بنك الكريمي
+              if (_showKareemiFields) ...[
+                Card(
+                  child: Padding(
+                    padding: const EdgeInsets.all(16),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        const Text(
+                          'معلومات بنك الكريمي',
+                          style: TextStyle(
+                            fontSize: 16,
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
+                        const SizedBox(height: 16),
+                        TextFormField(
+                          controller: _kareemiTransactionController,
+                          keyboardType: TextInputType.number,
+                          inputFormatters: [
+                            FilteringTextInputFormatter.digitsOnly,
+                          ],
+                          decoration: const InputDecoration(
+                            labelText: 'رقم معاملة الكريمي *',
+                            hintText: 'أدخل رقم معاملة التحويل',
+                            prefixIcon: Icon(Icons.receipt),
+                            border: OutlineInputBorder(),
+                          ),
+                          validator: (value) {
+                            if (value == null || value.isEmpty) {
+                              return 'رقم معاملة الكريمي مطلوب';
+                            }
+                            if (value.length < 6) {
+                              return 'رقم المعاملة يجب أن يكون 6 أرقام على الأقل';
+                            }
+                            return null;
+                          },
+                        ),
+                        const SizedBox(height: 8),
+                        const Text(
+                          'ملاحظة: سيتم عرض رقم حساب مزود الخدمة بعد إنشاء الحجز',
+                          style: TextStyle(fontSize: 12, color: Colors.grey),
+                        ),
+                      ],
                     ),
                   ),
                 ),
+                const SizedBox(height: 16),
               ],
-            ),
+
+              // ملاحظات
+              Card(
+                child: Padding(
+                  padding: const EdgeInsets.all(16),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      const Text(
+                        'ملاحظات إضافية (اختياري)',
+                        style: TextStyle(
+                          fontSize: 16,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                      const SizedBox(height: 8),
+                      TextFormField(
+                        controller: _noteController,
+                        maxLines: 3,
+                        decoration: const InputDecoration(
+                          hintText: 'أضف أي ملاحظات أو متطلبات خاصة...',
+                          border: OutlineInputBorder(),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+              const SizedBox(height: 24),
+
+              // زر الحجز
+              SizedBox(
+                width: double.infinity,
+                height: 50,
+                child: ElevatedButton(
+                  onPressed: _isLoading ? null : _createBooking,
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: AppColors.primaryColor,
+                    foregroundColor: Colors.white,
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                  ),
+                  child: _isLoading
+                      ? const CircularProgressIndicator(color: Colors.white)
+                      : const Text(
+                          'تأكيد الحجز',
+                          style: TextStyle(fontSize: 16),
+                        ),
+                ),
+              ),
+            ],
           ),
         ),
       ),
-    ),
-  );
+    );
+  }
+
+  @override
+  void dispose() {
+    _noteController.dispose();
+    _kareemiTransactionController.dispose();
+    super.dispose();
+  }
 }

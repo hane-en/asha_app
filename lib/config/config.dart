@@ -2,7 +2,7 @@ import '../utils/helpers.dart';
 
 class Config {
   // API Configuration
-  static const String apiBaseUrl = 'http://127.0.0.1/asha_app_tag';
+  static const String apiBaseUrl = 'http://localhost/new_backend';
   // static const String apiBaseUrl = 'http://localhost/asha_app_backend';
   // static const String apiBaseUrl = 'http://192.168.1.3/asha_app_backend';
   // إذا كنت على جهاز حقيقي، غيّرها إلى: http://192.168.x.x/backend_php/api
@@ -119,12 +119,11 @@ class Config {
   static const String statusCancelled = 'cancelled';
 
   // Payment Methods
-  static const List<String> paymentMethods = [
-    'نقداً',
-    'بطاقة ائتمان',
-    'تحويل بنكي',
-    'محفظة إلكترونية',
-  ];
+  static const List<String> paymentMethods = ['نقداً', 'بنك الكريمي'];
+
+  // Payment Method Values
+  static const String paymentMethodCash = 'cash';
+  static const String paymentMethodKareemi = 'kareemi_bank';
 
   // Rating Configuration
   static const int minRating = 1;

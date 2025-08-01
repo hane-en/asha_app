@@ -8,12 +8,13 @@ class LoginScreen extends StatefulWidget {
 
 class _LoginScreenState extends State<LoginScreen> {
   final AuthService _authService = AuthService();
-  final _emailController = TextEditingController();
+  final _identifierController = TextEditingController();
   final _passwordController = TextEditingController();
   bool _isLoading = false;
 
   Future<void> _login() async {
-    if (_emailController.text.isEmpty || _passwordController.text.isEmpty) {
+    if (_identifierController.text.isEmpty ||
+        _passwordController.text.isEmpty) {
       _showError('يرجى ملء جميع الحقول');
       return;
     }
@@ -24,8 +25,9 @@ class _LoginScreenState extends State<LoginScreen> {
 
     try {
       final response = await _authService.login(
-        email: _emailController.text,
+        identifier: _identifierController.text,
         password: _passwordController.text,
+        userType: 'admin',
       );
 
       if (response['success'] == true) {
@@ -57,12 +59,12 @@ class _LoginScreenState extends State<LoginScreen> {
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
             TextField(
-              controller: _emailController,
+              controller: _identifierController,
               decoration: InputDecoration(
-                labelText: 'البريد الإلكتروني',
+                labelText: 'البريد الإلكتروني أو رقم الهاتف',
                 border: OutlineInputBorder(),
               ),
-              keyboardType: TextInputType.emailAddress,
+              keyboardType: TextInputType.text,
             ),
             SizedBox(height: 16),
             TextField(

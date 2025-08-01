@@ -124,7 +124,17 @@ class ServicesService {
       if (response.statusCode == 200) {
         final data = json.decode(response.body);
         print('✅ Category services data: $data');
-        return {'success': true, 'data': data};
+        
+        // التأكد من أن البيانات في الشكل الصحيح
+        if (data['success'] == true) {
+          return {'success': true, 'data': data['data'] ?? data};
+        } else {
+          print('❌ API returned success: false');
+          return {
+            'success': false,
+            'message': data['message'] ?? 'فشل في تحميل خدمات الفئة',
+          };
+        }
       } else {
         print('❌ HTTP Error: ${response.statusCode}');
         return {'success': false, 'message': 'فشل في تحميل خدمات الفئة'};

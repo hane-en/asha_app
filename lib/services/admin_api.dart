@@ -4,7 +4,7 @@ import 'package:http/http.dart' as http;
 class AdminApi {
   // static const String baseUrl = 'http://192.168.1.3/asha_app_backend';
   // static const String baseUrl = 'http://localhost/asha_app_backend';
-  static const String baseUrl = 'http://127.0.0.1/asha_app_tag';
+  static const String baseUrl = 'http://localhost/new_backend';
 
   // ✅ تسجيل دخول المشرف
   static Future<bool> loginAdmin(String username, String password) async {

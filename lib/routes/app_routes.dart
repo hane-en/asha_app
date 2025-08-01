@@ -36,6 +36,7 @@ import '../screens/provider/provider_home_page.dart';
 import '../screens/provider/provider_pending_page.dart';
 import '../screens/provider/send_massage_page.dart';
 import '../screens/provider/settings_page.dart';
+import '../screens/services/services_screen.dart';
 import '../screens/user/booking_status_page.dart';
 import '../screens/user/favorites_page.dart';
 import '../screens/user/home_page.dart';
@@ -44,17 +45,9 @@ import '../screens/user/search_page.dart';
 import '../screens/user/settings_page.dart';
 import '../screens/user/user_help_page.dart';
 import '../screens/user/user_home_page.dart';
+import '../screens/user/provider_services_page.dart';
 import '../screens/provider/provider_help_page.dart';
 import '../screens/provider/edit_provider_profile_page.dart';
-import '../test_services_connection.dart';
-import '../test_connection.dart';
-import '../test_services_home_method.dart';
-import '../test_backend_connection.dart';
-import '../test_unified_data.dart';
-import '../test_services_simple.dart';
-import '../test_api_simple.dart';
-import '../screens/user/test_favorites_debug.dart';
-import '../screens/user/test_local_favorites.dart';
 import 'route_arguments.dart';
 import 'route_names.dart';
 
@@ -83,6 +76,8 @@ class AppRoutes {
   static const String userSettings = RouteNames.userSettings;
   static const String help = RouteNames.help;
   static const String serviceSearch = RouteNames.serviceSearch;
+  static const String categoryServices = RouteNames.categoryServices;
+  static const String providerServices = RouteNames.providerServices;
   static const String providerAnalytics = RouteNames.providerAnalytics;
   static const String providerSettings = RouteNames.providerSettings;
   static const String splash = RouteNames.splash;
@@ -187,6 +182,15 @@ class AppRoutes {
             ),
             settings: settings,
           );
+        case categoryServices:
+          final args = settings.arguments as Map<String, dynamic>?;
+          return MaterialPageRoute(
+            builder: (_) => ServicesScreen(
+              categoryId: args?['categoryId'],
+              categoryName: args?['categoryName'],
+            ),
+            settings: settings,
+          );
         case myServices:
           return MaterialPageRoute(
             builder: (_) => const MyServicesPage(),
@@ -247,6 +251,18 @@ class AppRoutes {
         case serviceSearch:
           return MaterialPageRoute(
             builder: (_) => const SearchPage(),
+            settings: settings,
+          );
+        case providerServices:
+          final args = settings.arguments as Map<String, dynamic>?;
+          final providerId = args?['provider_id'] as int? ?? 0;
+          final providerName =
+              args?['provider_name'] as String? ?? 'مزود الخدمة';
+          return MaterialPageRoute(
+            builder: (_) => ProviderServicesPage(
+              providerId: providerId,
+              providerName: providerName,
+            ),
             settings: settings,
           );
         case providerAnalytics:
@@ -357,43 +373,12 @@ class AppRoutes {
             builder: (_) => const ProviderNotificationsPage(),
             settings: settings,
           );
-        case '/test-services':
-          return MaterialPageRoute(
-            builder: (_) => TestServicesConnection(),
-            settings: settings,
-          );
-        case '/test-connection':
-          return MaterialPageRoute(
-            builder: (_) => TestConnection(),
-            settings: settings,
-          );
-        case '/test-services-home':
-          return MaterialPageRoute(
-            builder: (_) => TestServicesHomeMethod(),
-            settings: settings,
-          );
-        case '/test-backend':
-          return MaterialPageRoute(
-            builder: (_) => TestBackendConnection(),
-            settings: settings,
-          );
-        case '/test-unified':
-          return MaterialPageRoute(
-            builder: (_) => TestUnifiedData(),
-            settings: settings,
-          );
-        case '/test-services-simple':
-          return MaterialPageRoute(
-            builder: (_) => TestServicesSimple(),
-            settings: settings,
-          );
-        case '/test-api-simple':
-          return MaterialPageRoute(
-            builder: (_) => TestApiSimple(),
-            settings: settings,
-          );
         case '/test-favorites':
-          return MaterialPageRoute(builder: (_) => const TestFavoritesDebug());
+          return MaterialPageRoute(
+            builder: (_) => const Scaffold(
+              body: Center(child: Text('Test page not available')),
+            ),
+          );
         default:
           return MaterialPageRoute(
             builder: (_) => const _NotFoundPage(),

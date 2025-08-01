@@ -72,6 +72,10 @@ class SettingsPage extends StatelessWidget {
                 : 'Settings',
           ),
           centerTitle: true,
+          leading: IconButton(
+            icon: const Icon(Icons.arrow_back),
+            onPressed: () => Navigator.pop(context),
+          ),
         ),
         body: ListView(
           padding: const EdgeInsets.all(24),

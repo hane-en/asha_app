@@ -12,34 +12,23 @@ class ApiService {
   static const String _baseUrl = Config.apiBaseUrl;
   static const Duration _timeout = Duration(seconds: 30);
 
-  // Helper method to handle HTTP requests
+  // Helper method to make API requests with optional message suppression
   static Future<Map<String, dynamic>> _makeRequest(
     String endpoint, {
-    Map<String, String>? headers,
-    Object? body,
+    String? body,
     bool isPost = false,
-    bool isPut = false,
-    bool isDelete = false,
+    bool suppressMessages = false,
   }) async {
     try {
-      final uri = Uri.parse('$_baseUrl/$endpoint');
-      final requestHeaders = {
+      final url = '$_baseUrl/$endpoint';
+      final headers = {
         'Content-Type': 'application/json',
         'Accept': 'application/json',
         'User-Agent': 'EventServicesApp/${Config.appVersion}',
-        ...?headers,
       };
 
       if (Config.enableLogging) {
-        print(
-          'API Request: ${isPost
-              ? 'POST'
-              : isPut
-              ? 'PUT'
-              : isDelete
-              ? 'DELETE'
-              : 'GET'} $uri',
-        );
+        print('API Request: ${isPost ? 'POST' : 'GET'} $url');
         if (body != null) {
           print('Request Body: $body');
         }
@@ -48,19 +37,11 @@ class ApiService {
       http.Response response;
       if (isPost) {
         response = await http
-            .post(uri, headers: requestHeaders, body: body)
-            .timeout(_timeout);
-      } else if (isPut) {
-        response = await http
-            .put(uri, headers: requestHeaders, body: body)
-            .timeout(_timeout);
-      } else if (isDelete) {
-        response = await http
-            .delete(uri, headers: requestHeaders, body: body)
+            .post(Uri.parse(url), headers: headers, body: body)
             .timeout(_timeout);
       } else {
         response = await http
-            .get(uri, headers: requestHeaders)
+            .get(Uri.parse(url), headers: headers)
             .timeout(_timeout);
       }
 
@@ -71,6 +52,12 @@ class ApiService {
       if (response.statusCode >= 200 && response.statusCode < 300) {
         try {
           final responseData = json.decode(response.body);
+
+          // إخفاء رسائل النجاح إذا كان مطلوباً
+          if (!suppressMessages && responseData['success'] == true) {
+            print('✅ API Success: ${responseData['message'] ?? 'No message'}');
+          }
+
           return responseData;
         } catch (e) {
           print('Error parsing JSON response: $e');
@@ -129,6 +116,20 @@ class ApiService {
     }
   }
 
+  static Future<bool> removeFromFavorites(int userId, int serviceId) async {
+    try {
+      final data = await _makeRequest(
+        'api/favorites/remove.php',
+        body: json.encode({'user_id': userId, 'service_id': serviceId}),
+        isPost: true,
+      );
+      return data['success'] == true;
+    } catch (e) {
+      print('Error removing from favorites: $e');
+      return false;
+    }
+  }
+
   static Future<List<Map<String, dynamic>>> getFavorites(int userId) async {
     try {
       final data = await _makeRequest(
@@ -140,6 +141,79 @@ class ApiService {
       return [];
     } catch (e) {
       print('Error getting favorites: $e');
+      return [];
+    }
+  }
+
+  // Get providers by category
+  static Future<List<Map<String, dynamic>>> getProvidersByCategory(
+    int categoryId,
+  ) async {
+    try {
+      final data = await _makeRequest(
+        'api/providers/get_by_category.php?category_id=$categoryId',
+      );
+      if (data['success'] == true) {
+        return List<Map<String, dynamic>>.from(data['data']);
+      }
+      return [];
+    } catch (e) {
+      print('Error getting providers by category: $e');
+      return [];
+    }
+  }
+
+  // Get services by provider
+  static Future<List<Service>> getServicesByProvider(int providerId) async {
+    try {
+      final data = await _makeRequest(
+        'api/services/get_by_provider.php?provider_id=$providerId',
+      );
+      if (data['success'] == true && data['data'] != null) {
+        final servicesData = data['data']['services'] ?? data['data'];
+        if (servicesData is List) {
+          return List<Service>.from(
+            servicesData.map((item) => Service.fromJson(item)),
+          );
+        }
+      }
+      return [];
+    } catch (e) {
+      print('Error getting services by provider: $e');
+      return [];
+    }
+  }
+
+  // Create new booking
+  static Future<bool> createNewBooking(Map<String, dynamic> bookingData) async {
+    try {
+      final data = await _makeRequest(
+        'api/bookings/create.php',
+        body: json.encode(bookingData),
+        isPost: true,
+      );
+      return data['success'] == true;
+    } catch (e) {
+      print('Error creating booking: $e');
+      return false;
+    }
+  }
+
+  // Get all ads
+  static Future<List<AdModel>> getAllAds() async {
+    try {
+      final data = await _makeRequest('api/ads/get_all.php');
+      if (data['success'] == true && data['data'] != null) {
+        final adsData = data['data']['ads'] ?? data['data'];
+        if (adsData is List) {
+          return List<AdModel>.from(
+            adsData.map((item) => AdModel.fromJson(item)),
+          );
+        }
+      }
+      return [];
+    } catch (e) {
+      print('Error getting ads: $e');
       return [];
     }
   }
@@ -161,6 +235,44 @@ class ApiService {
       return [];
     } catch (e) {
       print('Error getting services by category: $e');
+      return [];
+    }
+  }
+
+  // Get services by category ID
+  static Future<List<Service>> getServicesByCategoryId(int categoryId) async {
+    try {
+      print('🔍 Fetching services for category ID: $categoryId');
+      final data = await _makeRequest(
+        'api/services/get_all.php?category_id=$categoryId',
+      );
+      print('📊 API response for category $categoryId: $data');
+
+      if (data['success'] == true && data['data'] != null) {
+        final servicesData = data['data']['services'] ?? data['data'];
+        print('📋 Services data for category $categoryId: $servicesData');
+
+        if (servicesData is List) {
+          final result = List<Service>.from(
+            servicesData.map((item) => Service.fromJson(item)),
+          );
+          print(
+            '✅ Processed services for category $categoryId: ${result.length} services',
+          );
+          return result;
+        } else {
+          print(
+            '⚠️ Services data is not a List for category $categoryId: ${servicesData.runtimeType}',
+          );
+        }
+      } else {
+        print(
+          '❌ API returned success: false for category $categoryId - ${data['message']}',
+        );
+      }
+      return [];
+    } catch (e) {
+      print('❌ Error getting services by category ID $categoryId: $e');
       return [];
     }
   }
@@ -644,7 +756,10 @@ class ApiService {
   // Get active ads for homepage
   static Future<List<AdModel>> getActiveAds() async {
     try {
-      final data = await _makeRequest('api/ads/get_active_ads.php');
+      final data = await _makeRequest(
+        'api/ads/get_active_ads.php',
+        suppressMessages: true, // إخفاء رسائل API
+      );
       if (data['success'] == true) {
         return List<AdModel>.from(
           data['data'].map((item) => AdModel.fromJson(item)),
@@ -653,6 +768,44 @@ class ApiService {
       return [];
     } catch (e) {
       print('Error getting active ads: $e');
+      return [];
+    }
+  }
+
+  // Get public ads for guests (without login)
+  static Future<List<AdModel>> getPublicAds() async {
+    try {
+      final data = await _makeRequest(
+        'api/ads/get_public_ads.php',
+        suppressMessages: true, // إخفاء رسائل API
+      );
+      if (data['success'] == true) {
+        return List<AdModel>.from(
+          data['data'].map((item) => AdModel.fromJson(item)),
+        );
+      }
+      return [];
+    } catch (e) {
+      print('Error getting public ads: $e');
+      return [];
+    }
+  }
+
+  // Get simple ads without any authentication
+  static Future<List<AdModel>> getSimpleAds() async {
+    try {
+      final data = await _makeRequest(
+        'api/ads/get_simple_ads.php',
+        suppressMessages: true, // إخفاء رسائل API
+      );
+      if (data['success'] == true) {
+        return List<AdModel>.from(
+          data['data'].map((item) => AdModel.fromJson(item)),
+        );
+      }
+      return [];
+    } catch (e) {
+      print('Error getting simple ads: $e');
       return [];
     }
   }
@@ -911,7 +1064,7 @@ class ApiService {
 
   // Login method
   static Future<Map<String, dynamic>> login({
-    required String email,
+    required String identifier,
     required String password,
     String? userType,
   }) async {
@@ -919,7 +1072,7 @@ class ApiService {
       final data = await _makeRequest(
         'api/auth/login.php',
         body: json.encode({
-          'email': email,
+          'identifier': identifier,
           'password': password,
           if (userType != null) 'user_type': userType,
         }),

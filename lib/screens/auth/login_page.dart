@@ -10,6 +10,7 @@ import '../provider/provider_home_page.dart';
 import '../admin/admin_home_page.dart';
 import 'signup_page.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import '../user/user_home_simple.dart'; // استخدام الصفحة المبسطة مؤقتاً
 
 class LoginPage extends StatefulWidget {
   const LoginPage({super.key});
@@ -20,7 +21,8 @@ class LoginPage extends StatefulWidget {
 
 class _LoginPageState extends State<LoginPage> {
   final _formKey = GlobalKey<FormState>();
-  final loginController = TextEditingController();
+  final identifierController =
+      TextEditingController(); // تغيير من loginController
   final passwordController = TextEditingController();
   bool isPasswordVisible = false;
   bool isLoading = false;
@@ -34,7 +36,7 @@ class _LoginPageState extends State<LoginPage> {
 
   @override
   void dispose() {
-    loginController.dispose();
+    identifierController.dispose(); // تغيير من loginController
     passwordController.dispose();
     super.dispose();
   }
@@ -73,7 +75,7 @@ class _LoginPageState extends State<LoginPage> {
     try {
       final authService = AuthService();
       final data = await authService.login(
-        email: loginController.text.trim(),
+        identifier: identifierController.text.trim(),
         password: passwordController.text,
       );
 
@@ -87,16 +89,26 @@ class _LoginPageState extends State<LoginPage> {
         final userType = data['data']['user']['user_type'] ?? 'user';
         final userId = data['data']['user']['id'];
 
+        print('🔍 User type from API: $userType');
+        print('🔍 User ID: $userId');
+
         // حفظ بيانات المستخدم في SharedPreferences
         final prefs = await SharedPreferences.getInstance();
-        await prefs.setInt('user_id', userId);
+        // تحويل userId إلى int إذا كان string
+        final userIdInt = userId is String ? int.tryParse(userId) ?? 0 : userId;
+        await prefs.setInt('user_id', userIdInt);
         await prefs.setString('user_name', data['data']['user']['name'] ?? '');
         await prefs.setString('role', userType);
+
+        print('💾 Saved to SharedPreferences:');
+        print('   - user_id: $userId');
+        print('   - user_name: ${data['data']['user']['name']}');
+        print('   - role: $userType');
 
         switch (userType) {
           case 'user':
             msg = '🎉 مرحبًا بك كمستخدم!';
-            nextPage = const UserHomePage();
+            nextPage = const UserHomePage(); // استخدام الصفحة الرئيسية
             break;
           case 'provider':
             msg = '✅ مرحباً بك كمزود خدمة! يمكنك الآن إضافة خدماتك وإعلاناتك.';
@@ -107,25 +119,25 @@ class _LoginPageState extends State<LoginPage> {
             nextPage = const AdminHomePage();
             break;
           default:
-            msg = '⚠️ نوع المستخدم غير معروف: $userType';
-            nextPage = const LoginPage();
+            msg =
+                '⚠️ نوع المستخدم غير معروف: $userType - سيتم توجيهك كالمستخدم العادي';
+            nextPage = const UserHomePage(); // استخدام الصفحة الرئيسية
         }
 
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
             content: Text(msg),
-
             backgroundColor: Color.fromARGB(255, 199, 154, 207),
             behavior: SnackBarBehavior.floating,
           ),
         );
 
-        String route;
+        String? route; // جعل المتغير nullable
         print('🔍 AppRoutes.userHome = ${AppRoutes.userHome}');
         switch (userType) {
           case 'user':
-            route = AppRoutes.userHome;
-            print('🎯 Navigating to user home: $route');
+            // استخدام التنقل المباشر للصفحة الرئيسية
+            print('🎯 Using direct navigation to UserHomePage');
             break;
           case 'provider':
             route = AppRoutes.providerHome;
@@ -136,11 +148,42 @@ class _LoginPageState extends State<LoginPage> {
             print('🎯 Navigating to admin home: $route');
             break;
           default:
-            route = AppRoutes.login;
-            print('⚠️ Unknown user type, staying on login: $route');
+            // استخدام التنقل المباشر للصفحة الرئيسية
+            print(
+              '⚠️ Unknown user type, using direct navigation to UserHomePage',
+            );
         }
-        print('🚀 About to navigate to: $route');
-        Navigator.pushNamedAndRemoveUntil(context, route, (route) => false);
+        print('🚀 About to navigate to: UserHomePage');
+
+        // محاولة التنقل
+        try {
+          if (userType == 'user' || userType == null) {
+            // استخدام التنقل المباشر للصفحة الرئيسية
+            Navigator.pushReplacement(
+              context,
+              MaterialPageRoute(builder: (_) => const UserHomePage()),
+            );
+            print('✅ Direct navigation to UserHomePage successful');
+          } else if (route != null) {
+            // استخدام التنقل بالـ route للمستخدمين الآخرين
+            Navigator.pushNamedAndRemoveUntil(context, route, (route) => false);
+            print('✅ Navigation successful to: $route');
+          } else {
+            // حل بديل إذا لم يتم تحديد route
+            Navigator.pushReplacement(
+              context,
+              MaterialPageRoute(builder: (_) => const UserHomePage()),
+            );
+            print('✅ Fallback navigation to UserHomePage successful');
+          }
+        } catch (e) {
+          print('❌ Navigation failed: $e');
+          // محاولة التنقل إلى الصفحة الرئيسية كحل بديل
+          Navigator.pushReplacement(
+            context,
+            MaterialPageRoute(builder: (_) => const UserHomePage()),
+          );
+        }
       } else {
         final errorMsg =
             data['message'] ??
@@ -236,7 +279,7 @@ class _LoginPageState extends State<LoginPage> {
 
                         // البريد الإلكتروني أو رقم الهاتف
                         TextFormField(
-                          controller: loginController,
+                          controller: identifierController,
                           keyboardType: TextInputType.text,
                           decoration: InputDecoration(
                             labelText: 'البريد الإلكتروني أو رقم الهاتف',
@@ -362,7 +405,7 @@ class _LoginPageState extends State<LoginPage> {
                                 Navigator.push(
                                   context,
                                   MaterialPageRoute(
-                                    builder: (context) => const SignupPage(),
+                                    builder: (context) => const SignupPage(source: 'drawer'),
                                   ),
                                 );
                               },

@@ -7,15 +7,18 @@ import '../../routes/route_names.dart';
 import '../../widgets/ads_carousel_widget.dart';
 import '../../services/api_service.dart';
 import '../../models/category_model.dart';
-import '../../models/service_with_offers_model.dart';
-import 'favorites_page.dart';
+import '../../models/ad_model.dart';
+import 'category_providers_page.dart';
 import '../auth/signup_page.dart';
 import '../auth/login_page.dart';
 import 'search_page.dart';
-import 'service_list_page.dart';
 import 'booking_status_page.dart';
 import '../admin/all_bookings_page.dart';
 import 'delete_account_page.dart';
+import 'favorites_page.dart';
+import 'notifications_page.dart';
+import 'user_help_page.dart';
+import 'settings_page.dart';
 
 class UserHomePage extends StatefulWidget {
   const UserHomePage({super.key});
@@ -31,9 +34,9 @@ class _UserHomePageState extends State<UserHomePage> {
   String? _userRole;
 
   List<CategoryModel> categories = [];
-  List<ServiceWithOffersModel> featuredServices = [];
+  List<AdModel> ads = [];
   bool _isLoadingCategories = false;
-  bool _isLoadingServices = false;
+  bool _isLoadingAds = false;
 
   @override
   void initState() {
@@ -41,23 +44,7 @@ class _UserHomePageState extends State<UserHomePage> {
     print('🏠 UserHomePage initState called');
     _loadUserData();
     _loadCategories();
-    _loadFeaturedServices();
-
-    // اختبار إضافي للفئات
-    _testCategories();
-  }
-
-  // دالة اختبار الفئات
-  Future<void> _testCategories() async {
-    try {
-      final result = await ApiService.getCategories();
-
-      for (var category in result) {
-        print('Category: ${category['name']}');
-      }
-    } catch (e) {
-      print('Categories test failed: $e');
-    }
+    _loadAds();
   }
 
   Future<void> _loadUserData() async {
@@ -96,6 +83,7 @@ class _UserHomePageState extends State<UserHomePage> {
         });
       }
     } catch (e) {
+      print('Error loading categories: $e');
       setState(() {
         categories = [];
       });
@@ -104,34 +92,21 @@ class _UserHomePageState extends State<UserHomePage> {
     }
   }
 
-  Future<void> _loadFeaturedServices() async {
-    setState(() => _isLoadingServices = true);
+  Future<void> _loadAds() async {
+    setState(() => _isLoadingAds = true);
     try {
-      final result = await ApiService.getServicesWithOffers(limit: 6);
-      final servicesData = result['services'] ?? [];
+      final adsData = await ApiService.getAllAds();
 
-      if (servicesData is List) {
-        setState(() {
-          featuredServices = servicesData
-              .where((data) => data is Map<String, dynamic>)
-              .map(
-                (data) => ServiceWithOffersModel.fromJson(
-                  data as Map<String, dynamic>,
-                ),
-              )
-              .toList();
-        });
-      } else {
-        setState(() {
-          featuredServices = [];
-        });
-      }
-    } catch (e) {
       setState(() {
-        featuredServices = [];
+        ads = adsData;
+      });
+    } catch (e) {
+      print('Error loading ads: $e');
+      setState(() {
+        ads = [];
       });
     } finally {
-      setState(() => _isLoadingServices = false);
+      setState(() => _isLoadingAds = false);
     }
   }
 
@@ -144,17 +119,57 @@ class _UserHomePageState extends State<UserHomePage> {
     Navigator.push(
       context,
       MaterialPageRoute(
-        builder: (_) => ServiceListPage(category: category.title),
+        builder: (_) => CategoryProvidersPage(
+          categoryId: category.id,
+          categoryName: category.title,
+        ),
       ),
     );
   }
 
   Future<void> _navigateToFavorites() async {
-    Navigator.pushNamedAndRemoveUntil(
+    Navigator.push(
       context,
-      AppRoutes.favorites,
-      (route) => false,
+      MaterialPageRoute(builder: (_) => const FavoritesPage()),
     );
+  }
+
+  Future<void> _navigateToNotifications() async {
+    Navigator.push(
+      context,
+      MaterialPageRoute(builder: (_) => const NotificationsPage()),
+    );
+  }
+
+  Future<void> _navigateToHelp() async {
+    Navigator.push(
+      context,
+      MaterialPageRoute(builder: (_) => const UserHelpPage()),
+    );
+  }
+
+  Future<void> _navigateToSettings() async {
+    Navigator.push(
+      context,
+      MaterialPageRoute(builder: (_) => const SettingsPage()),
+    );
+  }
+
+  Future<void> _navigateToDeleteAccount() async {
+    final userId = await _getUserId();
+    if (userId != null) {
+      Navigator.push(
+        context,
+        MaterialPageRoute(builder: (_) => DeleteAccountPage(userId: userId)),
+      );
+    } else {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('يجب تسجيل الدخول أولاً'),
+          backgroundColor: Colors.red,
+        ),
+      );
+    }
   }
 
   Future<void> _navigateToBookings() async {
@@ -183,44 +198,6 @@ class _UserHomePageState extends State<UserHomePage> {
       onWillPop: () async => true,
       child: SafeArea(
         child: Scaffold(
-          appBar: AppBar(
-            title: Row(
-              children: [
-                const Icon(Icons.event, color: Colors.white),
-                const SizedBox(width: 8),
-                const Text(
-                  'خدمات المناسبات',
-                  style: TextStyle(
-                    fontWeight: FontWeight.bold,
-                    color: Colors.white,
-                  ),
-                ),
-              ],
-            ),
-            backgroundColor: Colors.purple,
-            elevation: 0,
-            actions: [
-              IconButton(
-                icon: const Icon(Icons.search, color: Colors.white),
-                onPressed: () => Navigator.pushReplacementNamed(
-                  context,
-                  RouteNames.serviceSearch,
-                ),
-              ),
-              IconButton(
-                icon: const Icon(Icons.favorite, color: Colors.white),
-                onPressed: () => Navigator.pushReplacementNamed(
-                  context,
-                  RouteNames.favorites,
-                ),
-              ),
-              IconButton(
-                icon: const Icon(Icons.notifications, color: Colors.white),
-                onPressed: () =>
-                    Navigator.pushNamed(context, AppRoutes.notifications),
-              ),
-            ],
-          ),
           drawer: Drawer(
             child: Column(
               children: [
@@ -230,7 +207,7 @@ class _UserHomePageState extends State<UserHomePage> {
                     gradient: LinearGradient(
                       begin: Alignment.topCenter,
                       end: Alignment.bottomCenter,
-                      colors: [Color(0xFF8e24aa), Color(0xFFce93d8)],
+                      colors: [Colors.purple, Colors.purpleAccent],
                     ),
                   ),
                   child: SafeArea(
@@ -248,21 +225,30 @@ class _UserHomePageState extends State<UserHomePage> {
                         ),
                         const SizedBox(height: 8),
                         Text(
-                          _userName ?? 'مرحباً بك',
+                          _userName ?? 'المستخدم',
                           style: const TextStyle(
                             color: Colors.white,
                             fontSize: 18,
                             fontWeight: FontWeight.bold,
                           ),
                         ),
-                        if (_userRole != null)
-                          Text(
-                            _userRole == 'user' ? 'مستخدم' : 'مزود خدمة',
+                        Container(
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 16,
+                            vertical: 4,
+                          ),
+                          decoration: BoxDecoration(
+                            color: Colors.white.withOpacity(0.2),
+                            borderRadius: BorderRadius.circular(20),
+                          ),
+                          child: Text(
+                            _userRole == 'admin' ? 'مدير' : 'مستخدم',
                             style: const TextStyle(
-                              color: Colors.white70,
-                              fontSize: 14,
+                              color: Colors.white,
+                              fontSize: 12,
                             ),
                           ),
+                        ),
                       ],
                     ),
                   ),
@@ -272,16 +258,14 @@ class _UserHomePageState extends State<UserHomePage> {
                     padding: EdgeInsets.zero,
                     children: [
                       ListTile(
-                        leading: const Icon(Icons.home, color: Colors.purple),
-                        title: const Text('الصفحة الرئيسية'),
-                        selected: _selectedIndex == 0,
+                        leading: const Icon(Icons.home),
+                        title: const Text('الرئيسية'),
                         onTap: () {
                           Navigator.pop(context);
-                          setState(() => _selectedIndex = 0);
                         },
                       ),
                       ListTile(
-                        leading: const Icon(Icons.favorite, color: Colors.red),
+                        leading: const Icon(Icons.favorite),
                         title: const Text('المفضلة'),
                         onTap: () {
                           Navigator.pop(context);
@@ -289,32 +273,69 @@ class _UserHomePageState extends State<UserHomePage> {
                         },
                       ),
                       ListTile(
-                        leading: const Icon(Icons.event, color: Colors.green),
-                        title: const Text('الطلبات'),
+                        leading: const Icon(Icons.book_online),
+                        title: const Text('حجوزاتي'),
                         onTap: () {
                           Navigator.pop(context);
                           _navigateToBookings();
                         },
                       ),
+                      ListTile(
+                        leading: const Icon(Icons.notifications),
+                        title: const Text('الإشعارات'),
+                        onTap: () {
+                          Navigator.pop(context);
+                          _navigateToNotifications();
+                        },
+                      ),
                       const Divider(),
                       ListTile(
+                        leading: const Icon(Icons.help),
+                        title: const Text('المساعدة'),
+                        onTap: () {
+                          Navigator.pop(context);
+                          _navigateToHelp();
+                        },
+                      ),
+                      ListTile(
+                        leading: const Icon(Icons.settings),
+                        title: const Text('الإعدادات'),
+                        onTap: () {
+                          Navigator.pop(context);
+                          _navigateToSettings();
+                        },
+                      ),
+                      ListTile(
                         leading: const Icon(
-                          Icons.person_add,
-                          color: Colors.orange,
+                          Icons.delete_forever,
+                          color: Colors.red,
                         ),
-                        title: const Text('إنشاء حساب'),
+                        title: const Text(
+                          'حذف الحساب',
+                          style: TextStyle(color: Colors.red),
+                        ),
+                        onTap: () {
+                          Navigator.pop(context);
+                          _navigateToDeleteAccount();
+                        },
+                      ),
+                      const Divider(),
+                      ListTile(
+                        leading: const Icon(Icons.person_add),
+                        title: const Text('إنشاء حساب جديد'),
                         onTap: () {
                           Navigator.pop(context);
                           Navigator.push(
                             context,
                             MaterialPageRoute(
-                              builder: (_) => const SignupPage(),
+                              builder: (_) =>
+                                  const SignupPage(source: 'drawer'),
                             ),
                           );
                         },
                       ),
                       ListTile(
-                        leading: const Icon(Icons.login, color: Colors.purple),
+                        leading: const Icon(Icons.login),
                         title: const Text('تسجيل الدخول'),
                         onTap: () {
                           Navigator.pop(context);
@@ -328,65 +349,7 @@ class _UserHomePageState extends State<UserHomePage> {
                       ),
                       const Divider(),
                       ListTile(
-                        leading: const Icon(Icons.edit, color: Colors.blue),
-                        title: const Text('تعديل البيانات الشخصية'),
-                        onTap: () {
-                          Navigator.pop(context);
-                          Navigator.pushNamed(
-                            context,
-                            RouteNames.editUserProfile,
-                          );
-                        },
-                      ),
-                      ListTile(
-                        leading: const Icon(
-                          Icons.delete_forever,
-                          color: Colors.red,
-                        ),
-                        title: const Text('حذف الحساب'),
-                        onTap: () async {
-                          Navigator.pop(context);
-                          final userId = await _getUserId();
-                          if (userId != null) {
-                            Navigator.push(
-                              context,
-                              MaterialPageRoute(
-                                builder: (_) =>
-                                    DeleteAccountPage(userId: userId),
-                              ),
-                            );
-                          } else {
-                            ScaffoldMessenger.of(context).showSnackBar(
-                              const SnackBar(
-                                content: Text('يرجى تسجيل الدخول أولاً'),
-                                backgroundColor: Colors.red,
-                              ),
-                            );
-                          }
-                        },
-                      ),
-                      ListTile(
-                        leading: const Icon(Icons.settings, color: Colors.grey),
-                        title: const Text('الإعدادات'),
-                        onTap: () {
-                          Navigator.pop(context);
-                          Navigator.pushNamed(context, AppRoutes.userSettings);
-                        },
-                      ),
-                      ListTile(
-                        leading: const Icon(Icons.help, color: Colors.grey),
-                        title: const Text('المساعدة'),
-                        onTap: () {
-                          Navigator.pop(context);
-                          Navigator.pushNamed(context, AppRoutes.help);
-                        },
-                      ),
-                      const Divider(),
-                      ListTile(
-                        leading: const Icon(
-                          Icons.exit_to_app,
-                          color: Colors.red,
-                        ),
+                        leading: const Icon(Icons.logout),
                         title: const Text('تسجيل الخروج'),
                         onTap: () {
                           Navigator.pop(context);
@@ -399,320 +362,57 @@ class _UserHomePageState extends State<UserHomePage> {
               ],
             ),
           ),
+          appBar: AppBar(
+            title: Row(
+              children: [
+                const Icon(Icons.event, color: Colors.white),
+                const SizedBox(width: 8),
+                const Text(
+                  'خدمات المناسبات',
+                  style: TextStyle(
+                    fontWeight: FontWeight.bold,
+                    color: Colors.white,
+                  ),
+                ),
+              ],
+            ),
+            backgroundColor: AppColors.primaryColor,
+            elevation: 0,
+            actions: [
+              IconButton(
+                icon: const Icon(Icons.favorite, color: Colors.white),
+                onPressed: () {
+                  _navigateToFavorites();
+                },
+              ),
+              IconButton(
+                icon: const Icon(Icons.notifications, color: Colors.white),
+                onPressed: () {
+                  _navigateToNotifications();
+                },
+              ),
+              IconButton(
+                icon: const Icon(Icons.search, color: Colors.white),
+                onPressed: () {
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(builder: (_) => const SearchPage()),
+                  );
+                },
+              ),
+            ],
+          ),
           body: _isLoading
               ? const Center(child: CircularProgressIndicator())
               : Column(
                   children: [
-                    // ترحيب
-                    Container(
-                      width: double.infinity,
-                      padding: const EdgeInsets.all(20),
-                      decoration: const BoxDecoration(
-                        gradient: LinearGradient(
-                          begin: Alignment.topLeft,
-                          end: Alignment.bottomRight,
-                          colors: [Color(0xFF8e24aa), Color(0xFFba68c8)],
-                        ),
-                      ),
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Text(
-                            'مرحباً ${_userName ?? 'بك'}! 👋',
-                            style: const TextStyle(
-                              fontSize: 24,
-                              fontWeight: FontWeight.bold,
-                              color: Color.fromARGB(255, 237, 172, 255),
-                            ),
-                          ),
-                          const SizedBox(height: 8),
-                          const Text(
-                            'اكتشف أفضل خدمات المناسبات في منطقتك',
-                            style: TextStyle(
-                              fontSize: 16,
-                              color: Color.fromARGB(255, 221, 155, 233),
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
-
                     // الإعلانات
-                    const AdsCarouselWidget(),
-
-                    // الخدمات المميزة
-                    if (featuredServices.isNotEmpty) ...[
-                      Padding(
-                        padding: const EdgeInsets.all(16),
-                        child: Row(
-                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                          children: [
-                            const Text(
-                              'خدمات مميزة',
-                              style: TextStyle(
-                                fontSize: 20,
-                                fontWeight: FontWeight.bold,
-                              ),
-                            ),
-                            TextButton(
-                              onPressed: () {
-                                Navigator.pushNamed(
-                                  context,
-                                  RouteNames.serviceSearch,
-                                );
-                              },
-                              child: const Text('عرض الكل'),
-                            ),
-                          ],
-                        ),
+                    if (ads.isNotEmpty)
+                      Container(
+                        height: 200,
+                        margin: const EdgeInsets.all(16),
+                        child: AdsCarouselWidget(ads: ads),
                       ),
-                      SizedBox(
-                        height: 280,
-                        child: _isLoadingServices
-                            ? const Center(child: CircularProgressIndicator())
-                            : ListView.builder(
-                                scrollDirection: Axis.horizontal,
-                                padding: const EdgeInsets.symmetric(
-                                  horizontal: 16,
-                                ),
-                                itemCount: featuredServices.length,
-                                itemBuilder: (context, index) {
-                                  final service = featuredServices[index];
-                                  return Container(
-                                    width: 280,
-                                    margin: const EdgeInsets.only(right: 16),
-                                    child: Card(
-                                      elevation: 4,
-                                      shape: RoundedRectangleBorder(
-                                        borderRadius: BorderRadius.circular(12),
-                                      ),
-                                      child: Column(
-                                        crossAxisAlignment:
-                                            CrossAxisAlignment.start,
-                                        children: [
-                                          // صورة الخدمة
-                                          ClipRRect(
-                                            borderRadius:
-                                                const BorderRadius.only(
-                                                  topLeft: Radius.circular(12),
-                                                  topRight: Radius.circular(12),
-                                                ),
-                                            child: Container(
-                                              height: 120,
-                                              width: double.infinity,
-                                              decoration: BoxDecoration(
-                                                color: Colors.grey[300],
-                                              ),
-                                              child: service.imageUrl != null
-                                                  ? Image.network(
-                                                      service.imageUrl!,
-                                                      fit: BoxFit.cover,
-                                                      errorBuilder:
-                                                          (
-                                                            context,
-                                                            error,
-                                                            stackTrace,
-                                                          ) {
-                                                            return Icon(
-                                                              Icons.image,
-                                                              size: 50,
-                                                              color: Colors
-                                                                  .grey[600],
-                                                            );
-                                                          },
-                                                    )
-                                                  : Icon(
-                                                      Icons.image,
-                                                      size: 50,
-                                                      color: Colors.grey[600],
-                                                    ),
-                                            ),
-                                          ),
-                                          // محتوى الخدمة
-                                          Padding(
-                                            padding: const EdgeInsets.all(12),
-                                            child: Column(
-                                              crossAxisAlignment:
-                                                  CrossAxisAlignment.start,
-                                              children: [
-                                                // عنوان الخدمة
-                                                Text(
-                                                  service.title,
-                                                  style: const TextStyle(
-                                                    fontSize: 16,
-                                                    fontWeight: FontWeight.bold,
-                                                  ),
-                                                  maxLines: 1,
-                                                  overflow:
-                                                      TextOverflow.ellipsis,
-                                                ),
-                                                const SizedBox(height: 4),
-                                                // اسم المزود
-                                                Text(
-                                                  service.provider.name,
-                                                  style: TextStyle(
-                                                    fontSize: 12,
-                                                    color: Colors.grey[600],
-                                                  ),
-                                                ),
-                                                const SizedBox(height: 8),
-                                                // التقييم
-                                                Row(
-                                                  children: [
-                                                    Icon(
-                                                      Icons.star,
-                                                      size: 16,
-                                                      color: Colors.amber,
-                                                    ),
-                                                    const SizedBox(width: 4),
-                                                    Text(
-                                                      service.formattedRating,
-                                                      style: const TextStyle(
-                                                        fontSize: 12,
-                                                        fontWeight:
-                                                            FontWeight.bold,
-                                                      ),
-                                                    ),
-                                                    if (service.hasReviews) ...[
-                                                      const SizedBox(width: 4),
-                                                      Text(
-                                                        '(${service.reviewsCount})',
-                                                        style: TextStyle(
-                                                          fontSize: 12,
-                                                          color:
-                                                              Colors.grey[600],
-                                                        ),
-                                                      ),
-                                                    ],
-                                                  ],
-                                                ),
-                                                const SizedBox(height: 8),
-                                                // السعر والعروض
-                                                Row(
-                                                  mainAxisAlignment:
-                                                      MainAxisAlignment
-                                                          .spaceBetween,
-                                                  children: [
-                                                    Column(
-                                                      crossAxisAlignment:
-                                                          CrossAxisAlignment
-                                                              .start,
-                                                      children: [
-                                                        if (service
-                                                            .hasDiscount) ...[
-                                                          Text(
-                                                            service
-                                                                .formattedPrice,
-                                                            style: TextStyle(
-                                                              fontSize: 12,
-                                                              decoration:
-                                                                  TextDecoration
-                                                                      .lineThrough,
-                                                              color: Colors
-                                                                  .grey[600],
-                                                            ),
-                                                          ),
-                                                          Text(
-                                                            service
-                                                                .formattedFinalPrice,
-                                                            style:
-                                                                const TextStyle(
-                                                                  fontSize: 16,
-                                                                  fontWeight:
-                                                                      FontWeight
-                                                                          .bold,
-                                                                  color: Colors
-                                                                      .green,
-                                                                ),
-                                                          ),
-                                                        ] else ...[
-                                                          Text(
-                                                            service
-                                                                .formattedPrice,
-                                                            style:
-                                                                const TextStyle(
-                                                                  fontSize: 16,
-                                                                  fontWeight:
-                                                                      FontWeight
-                                                                          .bold,
-                                                                ),
-                                                          ),
-                                                        ],
-                                                      ],
-                                                    ),
-                                                    if (service.hasDiscount)
-                                                      Container(
-                                                        padding:
-                                                            const EdgeInsets.symmetric(
-                                                              horizontal: 8,
-                                                              vertical: 4,
-                                                            ),
-                                                        decoration: BoxDecoration(
-                                                          color: Colors.red,
-                                                          borderRadius:
-                                                              BorderRadius.circular(
-                                                                12,
-                                                              ),
-                                                        ),
-                                                        child: Text(
-                                                          service.discountText,
-                                                          style:
-                                                              const TextStyle(
-                                                                fontSize: 10,
-                                                                color: Colors
-                                                                    .white,
-                                                                fontWeight:
-                                                                    FontWeight
-                                                                        .bold,
-                                                              ),
-                                                        ),
-                                                      ),
-                                                  ],
-                                                ),
-                                                const SizedBox(height: 12),
-                                                // زر الحجز
-                                                SizedBox(
-                                                  width: double.infinity,
-                                                  child: ElevatedButton(
-                                                    onPressed: () {
-                                                      Navigator.pushNamed(
-                                                        context,
-                                                        '/booking-page',
-                                                        arguments: {
-                                                          'service_id':
-                                                              service.id,
-                                                        },
-                                                      );
-                                                    },
-                                                    style: ElevatedButton.styleFrom(
-                                                      backgroundColor:
-                                                          Colors.purple,
-                                                      foregroundColor:
-                                                          Colors.white,
-                                                      shape: RoundedRectangleBorder(
-                                                        borderRadius:
-                                                            BorderRadius.circular(
-                                                              8,
-                                                            ),
-                                                      ),
-                                                    ),
-                                                    child: const Text(
-                                                      'حجز الآن',
-                                                    ),
-                                                  ),
-                                                ),
-                                              ],
-                                            ),
-                                          ),
-                                        ],
-                                      ),
-                                    ),
-                                  );
-                                },
-                              ),
-                      ),
-                      const SizedBox(height: 16),
-                    ],
 
                     // الفئات
                     Expanded(
@@ -727,14 +427,14 @@ class _UserHomePageState extends State<UserHomePage> {
                             )
                           : GridView.builder(
                               padding: const EdgeInsets.all(16),
-                              itemCount: categories.length,
                               gridDelegate:
                                   const SliverGridDelegateWithFixedCrossAxisCount(
                                     crossAxisCount: 2,
-                                    crossAxisSpacing: 12,
-                                    mainAxisSpacing: 12,
-                                    childAspectRatio: 0.85,
+                                    crossAxisSpacing: 16,
+                                    mainAxisSpacing: 16,
+                                    childAspectRatio: 1.2,
                                   ),
+                              itemCount: categories.length,
                               itemBuilder: (context, index) {
                                 final category = categories[index];
                                 return GestureDetector(
@@ -742,102 +442,42 @@ class _UserHomePageState extends State<UserHomePage> {
                                   child: Card(
                                     elevation: 4,
                                     shape: RoundedRectangleBorder(
-                                      borderRadius: BorderRadius.circular(16),
+                                      borderRadius: BorderRadius.circular(12),
                                     ),
                                     child: Container(
                                       decoration: BoxDecoration(
-                                        borderRadius: BorderRadius.circular(16),
+                                        borderRadius: BorderRadius.circular(12),
                                         gradient: LinearGradient(
-                                          begin: Alignment.topCenter,
-                                          end: Alignment.bottomCenter,
+                                          begin: Alignment.topLeft,
+                                          end: Alignment.bottomRight,
                                           colors: [
-                                            category.colorData.withOpacity(0.8),
-                                            category.colorData.withOpacity(0.6),
+                                            AppColors.primaryColor,
+                                            AppColors.primaryColor.withOpacity(
+                                              0.8,
+                                            ),
                                           ],
                                         ),
                                       ),
-                                      child: Stack(
+                                      child: Column(
+                                        mainAxisAlignment:
+                                            MainAxisAlignment.center,
                                         children: [
-                                          // صورة الخلفية
-                                          Positioned.fill(
-                                            child: ClipRRect(
-                                              borderRadius:
-                                                  BorderRadius.circular(16),
-                                              child: Container(
-                                                decoration: BoxDecoration(
-                                                  color: category.colorData
-                                                      .withOpacity(0.3),
-                                                ),
-                                                child: Icon(
-                                                  category.iconData,
-                                                  size: 60,
-                                                  color: Colors.white
-                                                      .withOpacity(0.3),
-                                                ),
-                                              ),
-                                            ),
+                                          Icon(
+                                            Icons.category,
+                                            size: 48,
+                                            color: Colors.white,
                                           ),
-                                          // المحتوى
-                                          Positioned(
-                                            bottom: 0,
-                                            left: 0,
-                                            right: 0,
-                                            child: Container(
-                                              padding: const EdgeInsets.all(16),
-                                              decoration: BoxDecoration(
-                                                borderRadius:
-                                                    const BorderRadius.only(
-                                                      bottomLeft:
-                                                          Radius.circular(16),
-                                                      bottomRight:
-                                                          Radius.circular(16),
-                                                    ),
-                                                gradient: LinearGradient(
-                                                  begin: Alignment.topCenter,
-                                                  end: Alignment.bottomCenter,
-                                                  colors: [
-                                                    Colors.transparent,
-                                                    Colors.black.withOpacity(
-                                                      0.7,
-                                                    ),
-                                                  ],
-                                                ),
-                                              ),
-                                              child: Column(
-                                                crossAxisAlignment:
-                                                    CrossAxisAlignment.start,
-                                                children: [
-                                                  Text(
-                                                    category.title,
-                                                    style: const TextStyle(
-                                                      fontSize: 18,
-                                                      fontWeight:
-                                                          FontWeight.bold,
-                                                      color: Colors.white,
-                                                    ),
-                                                  ),
-                                                  const SizedBox(height: 4),
-                                                  Text(
-                                                    category.description,
-                                                    style: const TextStyle(
-                                                      fontSize: 12,
-                                                      color: Colors.white70,
-                                                    ),
-                                                    maxLines: 2,
-                                                    overflow:
-                                                        TextOverflow.ellipsis,
-                                                  ),
-                                                  const SizedBox(height: 4),
-                                                  Text(
-                                                    '${category.servicesCount} خدمة',
-                                                    style: const TextStyle(
-                                                      fontSize: 10,
-                                                      color: Colors.white60,
-                                                    ),
-                                                  ),
-                                                ],
-                                              ),
+                                          const SizedBox(height: 8),
+                                          Text(
+                                            category.title,
+                                            style: const TextStyle(
+                                              color: Colors.white,
+                                              fontSize: 16,
+                                              fontWeight: FontWeight.bold,
                                             ),
+                                            textAlign: TextAlign.center,
+                                            maxLines: 2,
+                                            overflow: TextOverflow.ellipsis,
                                           ),
                                         ],
                                       ),
@@ -852,55 +492,42 @@ class _UserHomePageState extends State<UserHomePage> {
           bottomNavigationBar: BottomNavigationBar(
             type: BottomNavigationBarType.fixed,
             currentIndex: _selectedIndex,
-            selectedItemColor: Colors.purple,
-            unselectedItemColor: Colors.grey,
             onTap: (index) {
-              setState(() => _selectedIndex = index);
+              setState(() {
+                _selectedIndex = index;
+              });
+
               switch (index) {
                 case 0:
-                  Navigator.pushNamedAndRemoveUntil(
-                    context,
-                    AppRoutes.userHome,
-                    (route) => false,
-                  );
+                  // البقاء في الصفحة الرئيسية
                   break;
                 case 1:
-                  Navigator.pushNamedAndRemoveUntil(
-                    context,
-                    AppRoutes.serviceSearch,
-                    (route) => false,
-                  );
+                  _navigateToFavorites();
                   break;
                 case 2:
-                  Navigator.pushNamedAndRemoveUntil(
-                    context,
-                    AppRoutes.favorites,
-                    (route) => false,
-                  );
+                  _navigateToBookings();
                   break;
                 case 3:
-                  Navigator.pushNamedAndRemoveUntil(
-                    context,
-                    AppRoutes.bookingStatus,
-                    (route) => false,
-                  );
+                  // إعدادات المستخدم
                   break;
               }
             },
+            selectedItemColor: AppColors.primaryColor,
+            unselectedItemColor: Colors.grey,
             items: const [
               BottomNavigationBarItem(
                 icon: Icon(Icons.home),
                 label: 'الرئيسية',
               ),
-              BottomNavigationBarItem(icon: Icon(Icons.search), label: 'بحث'),
               BottomNavigationBarItem(
                 icon: Icon(Icons.favorite),
                 label: 'المفضلة',
               ),
               BottomNavigationBarItem(
-                icon: Icon(Icons.event),
-                label: 'الطلبات',
+                icon: Icon(Icons.book_online),
+                label: 'الحجوزات',
               ),
+              BottomNavigationBarItem(icon: Icon(Icons.person), label: 'حسابي'),
             ],
           ),
         ),
