@@ -7,30 +7,18 @@ import '../../routes/route_names.dart';
 import '../../widgets/ads_carousel_widget.dart';
 import '../../services/api_service.dart';
 import '../../models/category_model.dart';
-<<<<<<< HEAD
 import '../../models/ad_model.dart';
 import 'category_providers_page.dart';
 import '../auth/signup_page.dart';
 import '../auth/login_page.dart';
-=======
-import '../../models/service_with_offers_model.dart';
-import 'favorites_page.dart';
-import '../auth/register_screen.dart';
-import '../auth/login_screen.dart';
->>>>>>> cb84a2eea26d79ad48594283002ea73596c659d0
 import 'search_page.dart';
 import 'booking_status_page.dart';
 import '../admin/all_bookings_page.dart';
 import 'delete_account_page.dart';
-<<<<<<< HEAD
 import 'favorites_page.dart';
 import 'notifications_page.dart';
 import 'user_help_page.dart';
 import 'settings_page.dart';
-=======
-import 'providers_by_category_screen.dart';
-import 'dart:convert'; // Added for json.decode
->>>>>>> cb84a2eea26d79ad48594283002ea73596c659d0
 
 class UserHomePage extends StatefulWidget {
   const UserHomePage({super.key});
@@ -46,18 +34,9 @@ class _UserHomePageState extends State<UserHomePage> {
   String? _userRole;
 
   List<CategoryModel> categories = [];
-<<<<<<< HEAD
   List<AdModel> ads = [];
   bool _isLoadingCategories = false;
   bool _isLoadingAds = false;
-=======
-  List<ServiceWithOffersModel> featuredServices = [];
-  List<Map<String, dynamic>> providers = [];
-  bool _isLoadingCategories = false;
-  bool _isLoadingServices = false;
-  bool _isLoadingProviders = false;
-  bool _showFeaturedServices = true; // متغير للتحكم في ظهور الخدمات المميزة
->>>>>>> cb84a2eea26d79ad48594283002ea73596c659d0
 
   @override
   void initState() {
@@ -65,19 +44,7 @@ class _UserHomePageState extends State<UserHomePage> {
     print('UserHomePage initState called'); // Debug info
     _loadUserData();
     _loadCategories();
-<<<<<<< HEAD
     _loadAds();
-=======
-    _loadFeaturedServices();
-    _loadProviders();
-  }
-
-  @override
-  void dispose() {
-    // تنظيف الموارد
-    print('UserHomePage dispose called'); // Debug info
-    super.dispose();
->>>>>>> cb84a2eea26d79ad48594283002ea73596c659d0
   }
 
   Future<void> _loadUserData() async {
@@ -295,14 +262,7 @@ class _UserHomePageState extends State<UserHomePage> {
         });
       }
     } catch (e) {
-<<<<<<< HEAD
       print('Error loading categories: $e');
-=======
-      print(
-        'Error loading categories: $e, adding default categories',
-      ); // Debug info
-      // إضافة فئات افتراضية في حالة الخطأ
->>>>>>> cb84a2eea26d79ad48594283002ea73596c659d0
       setState(() {
         categories = [
           CategoryModel(
@@ -375,53 +335,101 @@ class _UserHomePageState extends State<UserHomePage> {
   Future<void> _loadAds() async {
     setState(() => _isLoadingAds = true);
     try {
-<<<<<<< HEAD
       final adsData = await ApiService.getAllAds();
 
-=======
-      // جلب الخدمات المميزة من قاعدة البيانات
-      final result = await ApiService.getAllServices();
-      print('Featured services API response: $result'); // Debug info
-      if (result['success'] && result['data'] != null) {
-        final servicesData = result['data'] as List;
-        print(
-          'Featured services data length: ${servicesData.length}',
-        ); // Debug info
+      if (adsData['success'] && adsData['data'] != null) {
+        final data = adsData['data'] as List;
+        print('Ads data length: ${data.length}'); // Debug info
+        print('Ads data: $data'); // Debug info
 
-        // إزالة التكرار واختيار خدمات مختلفة فقط
-        final uniqueServices = <ServiceWithOffersModel>[];
-        final seenTitles = <String>{};
+        if (data.isNotEmpty) {
+          final uniqueAds = <AdModel>[];
+          final seenTitles = <String>{};
 
-        for (final data in servicesData) {
-          final service = ServiceWithOffersModel.fromJson(data);
-          if (!seenTitles.contains(service.title)) {
-            seenTitles.add(service.title);
-            uniqueServices.add(service);
+          for (final item in data) {
+            try {
+              final ad = AdModel.fromJson(item);
+              if (!seenTitles.contains(ad.title)) {
+                seenTitles.add(ad.title);
+                uniqueAds.add(ad);
+              }
+            } catch (e) {
+              print(
+                'Error creating ad from item $item: $e',
+              ); // Debug info
+            }
           }
-          // إيقاف عند الوصول لـ 6 خدمات مختلفة
-          if (uniqueServices.length >= 6) break;
-        }
 
-        setState(() {
-          featuredServices = uniqueServices;
-        });
-        print(
-          'Featured services loaded: ${featuredServices.length}',
-        ); // Debug info
+          setState(() {
+            ads = uniqueAds;
+          });
+          print(
+            'Ads loaded successfully: ${ads.length}',
+          ); // Debug info
+        } else {
+          print('No ads data found, adding default ads'); // Debug info
+          setState(() {
+            ads = [
+              AdModel(
+                id: 1,
+                title: 'إعلان 1',
+                subtitle: 'وصف لإعلان 1',
+                imageUrl: 'assets/images/ad1.jpg',
+                rating: '4.5',
+                createdAt: DateTime.now().toString(),
+              ),
+              AdModel(
+                id: 2,
+                title: 'إعلان 2',
+                subtitle: 'وصف لإعلان 2',
+                imageUrl: 'assets/images/ad2.jpg',
+                rating: '4.0',
+                createdAt: DateTime.now().toString(),
+              ),
+              AdModel(
+                id: 3,
+                title: 'إعلان 3',
+                subtitle: 'وصف لإعلان 3',
+                imageUrl: 'assets/images/ad3.jpg',
+                rating: '4.8',
+                createdAt: DateTime.now().toString(),
+              ),
+            ];
+          });
+        }
       } else {
         print(
-          'Featured services API failed: ${result['message']}',
+          'Ads API failed: ${adsData['message']}, adding default ads',
         ); // Debug info
         setState(() {
-          featuredServices = [];
+          ads = [
+            AdModel(
+              id: 1,
+              title: 'إعلان 1',
+              subtitle: 'وصف لإعلان 1',
+              imageUrl: 'assets/images/ad1.jpg',
+              rating: '4.5',
+              createdAt: DateTime.now().toString(),
+            ),
+            AdModel(
+              id: 2,
+              title: 'إعلان 2',
+              subtitle: 'وصف لإعلان 2',
+              imageUrl: 'assets/images/ad2.jpg',
+              rating: '4.0',
+              createdAt: DateTime.now().toString(),
+            ),
+            AdModel(
+              id: 3,
+              title: 'إعلان 3',
+              subtitle: 'وصف لإعلان 3',
+              imageUrl: 'assets/images/ad3.jpg',
+              rating: '4.8',
+              createdAt: DateTime.now().toString(),
+            ),
+          ];
         });
       }
-    } catch (e) {
-      print('Error loading featured services: $e');
->>>>>>> cb84a2eea26d79ad48594283002ea73596c659d0
-      setState(() {
-        ads = adsData;
-      });
     } catch (e) {
       print('Error loading ads: $e');
       setState(() {
@@ -429,35 +437,6 @@ class _UserHomePageState extends State<UserHomePage> {
       });
     } finally {
       setState(() => _isLoadingAds = false);
-    }
-  }
-
-  Future<void> _loadProviders() async {
-    setState(() => _isLoadingProviders = true);
-    try {
-      final result = await ApiService.getAllProviders();
-      print('Providers API response: $result'); // Debug info
-      if (result['success'] && result['data'] != null) {
-        final providersData = result['data']['providers'] as List;
-        print('Providers data length: ${providersData.length}'); // Debug info
-
-        setState(() {
-          providers = providersData.cast<Map<String, dynamic>>();
-        });
-        print('Providers loaded: ${providers.length}'); // Debug info
-      } else {
-        print('Providers API failed: ${result['message']}'); // Debug info
-        setState(() {
-          providers = [];
-        });
-      }
-    } catch (e) {
-      print('Error loading providers: $e');
-      setState(() {
-        providers = [];
-      });
-    } finally {
-      setState(() => _isLoadingProviders = false);
     }
   }
 
@@ -550,7 +529,6 @@ class _UserHomePageState extends State<UserHomePage> {
   }
 
   void _navigateToCategory(CategoryModel category) {
-<<<<<<< HEAD
     Navigator.push(
       context,
       MaterialPageRoute(
@@ -560,24 +538,6 @@ class _UserHomePageState extends State<UserHomePage> {
         ),
       ),
     );
-=======
-    try {
-      print('Navigating to category: ${category.title}'); // Debug info
-      Navigator.pushNamed(
-        context,
-        RouteNames.providersByCategory,
-        arguments: {'categoryId': category.id, 'categoryName': category.title},
-      );
-    } catch (e) {
-      print('Error navigating to category: $e'); // Debug info
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text('خطأ في التنقل إلى الفئة: $e'),
-          backgroundColor: Colors.red,
-        ),
-      );
-    }
->>>>>>> cb84a2eea26d79ad48594283002ea73596c659d0
   }
 
   Future<void> _navigateToFavorites() async {
@@ -727,7 +687,7 @@ class _UserHomePageState extends State<UserHomePage> {
     if (mounted) {
       Navigator.pushReplacement(
         context,
-        MaterialPageRoute(builder: (_) => const LoginScreen()),
+        MaterialPageRoute(builder: (_) => const LoginPage()),
       );
     }
   }
@@ -742,300 +702,6 @@ class _UserHomePageState extends State<UserHomePage> {
       onWillPop: () async => true,
       child: SafeArea(
         child: Scaffold(
-<<<<<<< HEAD
-=======
-          appBar: AppBar(
-            title: Row(
-              children: [
-                const Icon(Icons.event, color: Colors.white),
-                const SizedBox(width: 8),
-                const Text(
-                  'خدمات المناسبات',
-                  style: TextStyle(
-                    fontWeight: FontWeight.bold,
-                    color: Colors.white,
-                  ),
-                ),
-              ],
-            ),
-            backgroundColor: Colors.purple,
-            elevation: 0,
-            actions: [
-              IconButton(
-                icon: const Icon(Icons.notifications, color: Colors.white),
-                onPressed: () =>
-                    Navigator.pushNamed(context, AppRoutes.notifications),
-              ),
-              IconButton(
-                icon: const Icon(Icons.favorite, color: Colors.white),
-                onPressed: () => Navigator.pushReplacementNamed(
-                  context,
-                  RouteNames.favorites,
-                ),
-              ),
-              IconButton(
-                icon: const Icon(Icons.search, color: Colors.white),
-                onPressed: () => Navigator.pushReplacementNamed(
-                  context,
-                  RouteNames.serviceSearch,
-                ),
-              ),
-              IconButton(
-                icon: const Icon(Icons.calendar_today, color: Colors.white),
-                onPressed: () => Navigator.pushReplacementNamed(
-                  context,
-                  RouteNames.bookingStatus,
-                ),
-              ),
-              IconButton(
-                icon: const Icon(Icons.menu, color: Colors.white),
-                onPressed: () => Scaffold.of(context).openDrawer(),
-              ),
-            ],
-          ),
->>>>>>> cb84a2eea26d79ad48594283002ea73596c659d0
-          drawer: Drawer(
-            child: Column(
-              children: [
-                Container(
-                  height: 200,
-                  decoration: const BoxDecoration(
-                    gradient: LinearGradient(
-                      begin: Alignment.topCenter,
-                      end: Alignment.bottomCenter,
-                      colors: [Colors.purple, Colors.purpleAccent],
-                    ),
-                  ),
-                  child: SafeArea(
-                    child: Column(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      children: [
-                        const CircleAvatar(
-                          radius: 40,
-                          backgroundColor: Colors.white,
-                          child: Icon(
-                            Icons.person,
-                            size: 40,
-                            color: Colors.purple,
-                          ),
-                        ),
-                        const SizedBox(height: 8),
-                        Text(
-                          _userName ?? 'المستخدم',
-                          style: const TextStyle(
-                            color: Colors.white,
-                            fontSize: 18,
-                            fontWeight: FontWeight.bold,
-                          ),
-                        ),
-                        Container(
-                          padding: const EdgeInsets.symmetric(
-                            horizontal: 16,
-                            vertical: 4,
-                          ),
-                          decoration: BoxDecoration(
-                            color: Colors.white.withOpacity(0.2),
-                            borderRadius: BorderRadius.circular(20),
-                          ),
-                          child: Text(
-                            _userRole == 'admin' ? 'مدير' : 'مستخدم',
-                            style: const TextStyle(
-                              color: Colors.white,
-                              fontSize: 12,
-                            ),
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-                ),
-                Expanded(
-                  child: ListView(
-                    padding: EdgeInsets.zero,
-                    children: [
-                      ListTile(
-<<<<<<< HEAD
-                        leading: const Icon(Icons.home),
-                        title: const Text('الرئيسية'),
-=======
-                        leading: const Icon(Icons.home, color: Colors.purple),
-                        title: const Text('خدمات المناسبات'),
-                        selected: _selectedIndex == 0,
->>>>>>> cb84a2eea26d79ad48594283002ea73596c659d0
-                        onTap: () {
-                          Navigator.pop(context);
-                        },
-                      ),
-                      ListTile(
-                        leading: const Icon(Icons.favorite),
-                        title: const Text('المفضلة'),
-                        onTap: () {
-                          Navigator.pop(context);
-                          _navigateToFavorites();
-                        },
-                      ),
-                      ListTile(
-                        leading: const Icon(Icons.book_online),
-                        title: const Text('حجوزاتي'),
-                        onTap: () {
-                          Navigator.pop(context);
-                          _navigateToBookings();
-                        },
-                      ),
-                      ListTile(
-                        leading: const Icon(Icons.notifications),
-                        title: const Text('الإشعارات'),
-                        onTap: () {
-                          Navigator.pop(context);
-                          _navigateToNotifications();
-                        },
-                      ),
-                      const Divider(),
-                      ListTile(
-                        leading: const Icon(Icons.help),
-                        title: const Text('المساعدة'),
-                        onTap: () {
-                          Navigator.pop(context);
-                          _navigateToHelp();
-                        },
-                      ),
-                      ListTile(
-                        leading: const Icon(Icons.settings),
-                        title: const Text('الإعدادات'),
-                        onTap: () {
-                          Navigator.pop(context);
-                          _navigateToSettings();
-                        },
-                      ),
-                      ListTile(
-                        leading: const Icon(
-                          Icons.delete_forever,
-                          color: Colors.red,
-                        ),
-                        title: const Text(
-                          'حذف الحساب',
-                          style: TextStyle(color: Colors.red),
-                        ),
-                        onTap: () {
-                          Navigator.pop(context);
-                          _navigateToDeleteAccount();
-                        },
-                      ),
-                      const Divider(),
-                      ListTile(
-                        leading: const Icon(Icons.person_add),
-                        title: const Text('إنشاء حساب جديد'),
-                        onTap: () {
-                          Navigator.pop(context);
-                          Navigator.push(
-                            context,
-                            MaterialPageRoute(
-<<<<<<< HEAD
-                              builder: (_) =>
-                                  const SignupPage(source: 'drawer'),
-=======
-                              builder: (_) => const RegisterScreen(),
->>>>>>> cb84a2eea26d79ad48594283002ea73596c659d0
-                            ),
-                          );
-                        },
-                      ),
-                      ListTile(
-                        leading: const Icon(Icons.login),
-                        title: const Text('تسجيل الدخول'),
-                        onTap: () {
-                          Navigator.pop(context);
-                          Navigator.pushReplacementNamed(
-                            context,
-                            RouteNames.login,
-                          );
-                        },
-                      ),
-                      const Divider(),
-                      ListTile(
-<<<<<<< HEAD
-                        leading: const Icon(Icons.logout),
-=======
-                        leading: const Icon(Icons.edit, color: Colors.blue),
-                        title: const Text('تعديل البيانات الشخصية'),
-                        onTap: () {
-                          Navigator.pop(context);
-                          Navigator.pushNamed(
-                            context,
-                            RouteNames.editUserProfile,
-                          );
-                        },
-                      ),
-                      ListTile(
-                        leading: const Icon(
-                          Icons.delete_forever,
-                          color: Colors.red,
-                        ),
-                        title: const Text('حذف الحساب'),
-                        onTap: () async {
-                          Navigator.pop(context);
-                          final userId = await _getUserId();
-                          if (userId != null) {
-                            Navigator.push(
-                              context,
-                              MaterialPageRoute(
-                                builder: (_) =>
-                                    DeleteAccountPage(userId: userId),
-                              ),
-                            );
-                          } else {
-                            ScaffoldMessenger.of(context).showSnackBar(
-                              const SnackBar(
-                                content: Text('يرجى تسجيل الدخول أولاً'),
-                                backgroundColor: Colors.red,
-                              ),
-                            );
-                          }
-                        },
-                      ),
-                      ListTile(
-                        leading: const Icon(Icons.settings, color: Colors.grey),
-                        title: const Text('الإعدادات'),
-                        onTap: () {
-                          Navigator.pop(context);
-                          Navigator.pushNamed(context, AppRoutes.userSettings);
-                        },
-                      ),
-                      ListTile(
-                        leading: const Icon(Icons.help, color: Colors.grey),
-                        title: const Text('المساعدة'),
-                        onTap: () {
-                          Navigator.pop(context);
-                          Navigator.pushNamed(context, AppRoutes.help);
-                        },
-                      ),
-                      ListTile(
-                        leading: const Icon(Icons.storage, color: Colors.green),
-                        title: const Text('اختبار قاعدة البيانات'),
-                        onTap: () {
-                          Navigator.pop(context);
-                          Navigator.pushNamed(context, RouteNames.databaseTest);
-                        },
-                      ),
-                      const Divider(),
-                      ListTile(
-                        leading: const Icon(
-                          Icons.exit_to_app,
-                          color: Colors.red,
-                        ),
->>>>>>> cb84a2eea26d79ad48594283002ea73596c659d0
-                        title: const Text('تسجيل الخروج'),
-                        onTap: () {
-                          Navigator.pop(context);
-                          _logout();
-                        },
-                      ),
-                    ],
-                  ),
-                ),
-              ],
-            ),
-          ),
           appBar: AppBar(
             title: Row(
               children: [
@@ -1078,58 +744,6 @@ class _UserHomePageState extends State<UserHomePage> {
           ),
           body: _isLoading
               ? const Center(child: CircularProgressIndicator())
-<<<<<<< HEAD
-              : Column(
-                  children: [
-                    // الإعلانات
-                    if (ads.isNotEmpty)
-                      Container(
-                        height: 200,
-                        margin: const EdgeInsets.all(16),
-                        child: AdsCarouselWidget(ads: ads),
-                      ),
-
-                    // الفئات
-                    Expanded(
-                      child: _isLoadingCategories
-                          ? const Center(child: CircularProgressIndicator())
-                          : categories.isEmpty
-                          ? const Center(
-                              child: Text(
-                                'لا توجد فئات متاحة',
-                                style: TextStyle(fontSize: 16),
-                              ),
-                            )
-                          : GridView.builder(
-                              padding: const EdgeInsets.all(16),
-                              gridDelegate:
-                                  const SliverGridDelegateWithFixedCrossAxisCount(
-                                    crossAxisCount: 2,
-                                    crossAxisSpacing: 16,
-                                    mainAxisSpacing: 16,
-                                    childAspectRatio: 1.2,
-                                  ),
-                              itemCount: categories.length,
-                              itemBuilder: (context, index) {
-                                final category = categories[index];
-                                return GestureDetector(
-                                  onTap: () => _navigateToCategory(category),
-                                  child: Card(
-                                    elevation: 4,
-                                    shape: RoundedRectangleBorder(
-                                      borderRadius: BorderRadius.circular(12),
-                                    ),
-                                    child: Container(
-                                      decoration: BoxDecoration(
-                                        borderRadius: BorderRadius.circular(12),
-                                        gradient: LinearGradient(
-                                          begin: Alignment.topLeft,
-                                          end: Alignment.bottomRight,
-                                          colors: [
-                                            AppColors.primaryColor,
-                                            AppColors.primaryColor.withOpacity(
-                                              0.8,
-=======
               : SingleChildScrollView(
                   child: Column(
                     children: [
@@ -1443,29 +1057,10 @@ class _UserHomePageState extends State<UserHomePage> {
                                                   ],
                                                 ),
                                               ),
->>>>>>> cb84a2eea26d79ad48594283002ea73596c659d0
                                             ),
                                           ],
                                         ),
                                       ),
-<<<<<<< HEAD
-                                      child: Column(
-                                        mainAxisAlignment:
-                                            MainAxisAlignment.center,
-                                        children: [
-                                          Icon(
-                                            Icons.category,
-                                            size: 48,
-                                            color: Colors.white,
-                                          ),
-                                          const SizedBox(height: 8),
-                                          Text(
-                                            category.title,
-                                            style: const TextStyle(
-                                              color: Colors.white,
-                                              fontSize: 16,
-                                              fontWeight: FontWeight.bold,
-=======
                                     );
                                   },
                                 ),
@@ -1677,7 +1272,6 @@ class _UserHomePageState extends State<UserHomePage> {
                                                   ],
                                                 ),
                                               ),
->>>>>>> cb84a2eea26d79ad48594283002ea73596c659d0
                                             ),
                                             textAlign: TextAlign.center,
                                             maxLines: 2,
@@ -1700,28 +1294,8 @@ class _UserHomePageState extends State<UserHomePage> {
                 ),
           bottomNavigationBar: BottomNavigationBar(
             type: BottomNavigationBarType.fixed,
-<<<<<<< HEAD
-            currentIndex: _selectedIndex,
-            onTap: (index) {
-              setState(() {
-                _selectedIndex = index;
-              });
-
-              switch (index) {
-                case 0:
-                  // البقاء في الصفحة الرئيسية
-                  break;
-                case 1:
-                  _navigateToFavorites();
-                  break;
-                case 2:
-                  _navigateToBookings();
-                  break;
-                case 3:
-                  // إعدادات المستخدم
-=======
             currentIndex: 0,
-            selectedItemColor: Colors.purple,
+            selectedItemColor: AppColors.primaryColor,
             unselectedItemColor: Colors.grey,
             onTap: (index) async {
               final prefs = await SharedPreferences.getInstance();
@@ -1750,12 +1324,9 @@ class _UserHomePageState extends State<UserHomePage> {
                     RouteNames.bookingStatus,
                     arguments: {'userId': userId},
                   );
->>>>>>> cb84a2eea26d79ad48594283002ea73596c659d0
                   break;
               }
             },
-            selectedItemColor: AppColors.primaryColor,
-            unselectedItemColor: Colors.grey,
             items: const [
               BottomNavigationBarItem(
                 icon: Icon(Icons.home),

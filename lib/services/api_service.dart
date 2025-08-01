@@ -6,7 +6,6 @@ import '../config/config.dart';
 class ApiService {
   static const String baseUrl = Config.apiBaseUrl;
 
-<<<<<<< HEAD
   // Helper method to make API requests with optional message suppression
   static Future<Map<String, dynamic>> _makeRequest(
     String endpoint, {
@@ -38,55 +37,6 @@ class ApiService {
         response = await http
             .get(Uri.parse(url), headers: headers)
             .timeout(_timeout);
-=======
-  // Headers للطلبات
-  static Map<String, String> get _headers => {
-    'Content-Type': 'application/json',
-    'Accept': 'application/json',
-  };
-
-  // دالة مساعدة للطلبات
-  static Future<Map<String, dynamic>> _makeRequest(
-    String endpoint, {
-    Map<String, dynamic>? body,
-    Map<String, String>? queryParams,
-    String method = 'GET',
-  }) async {
-    try {
-      final uri = Uri.parse(
-        '$baseUrl$endpoint',
-      ).replace(queryParameters: queryParams);
-
-      print('Making request to: $uri'); // Debug info
-      print('Method: $method'); // Debug info
-      print('Headers: $_headers'); // Debug info
-
-      http.Response response;
-
-      switch (method.toUpperCase()) {
-        case 'GET':
-          response = await http.get(uri, headers: _headers);
-          break;
-        case 'POST':
-          response = await http.post(
-            uri,
-            headers: _headers,
-            body: jsonEncode(body),
-          );
-          break;
-        case 'PUT':
-          response = await http.put(
-            uri,
-            headers: _headers,
-            body: jsonEncode(body),
-          );
-          break;
-        case 'DELETE':
-          response = await http.delete(uri, headers: _headers);
-          break;
-        default:
-          throw Exception('Method not supported');
->>>>>>> cb84a2eea26d79ad48594283002ea73596c659d0
       }
 
       // طباعة معلومات الاستجابة للتشخيص
@@ -98,7 +48,6 @@ class ApiService {
       final contentType = response.headers['content-type'] ?? '';
       if (contentType.contains('application/json')) {
         try {
-<<<<<<< HEAD
           final responseData = json.decode(response.body);
 
           // إخفاء رسائل النجاح إذا كان مطلوباً
@@ -107,22 +56,11 @@ class ApiService {
           }
 
           return responseData;
-=======
-          final data = jsonDecode(response.body);
-          print('Parsed JSON data: $data'); // Debug info
-
-          if (response.statusCode >= 200 && response.statusCode < 300) {
-            return data;
-          } else {
-            throw Exception(data['message'] ?? 'حدث خطأ في الطلب');
-          }
->>>>>>> cb84a2eea26d79ad48594283002ea73596c659d0
         } catch (e) {
           print('JSON Decode Error: $e');
           throw Exception('خطأ في تنسيق البيانات من الخادم');
         }
       } else {
-<<<<<<< HEAD
         print('HTTP Error: ${response.statusCode} - ${response.reasonPhrase}');
         return {
           'success': false,
@@ -420,22 +358,12 @@ class ApiService {
       if (data['success'] == true) {
         return List<Service>.from(
           data['data'].map((item) => Service.fromJson(item)),
-=======
-        // إذا لم يكن JSON، قد يكون خطأ في الخادم
-        print('Non-JSON Response: ${response.body}');
-        throw Exception(
-          'الخادم لا يعيد بيانات JSON صحيحة - تأكد من أن الخادم يعمل بشكل صحيح',
->>>>>>> cb84a2eea26d79ad48594283002ea73596c659d0
         );
       }
+      return [];
     } catch (e) {
-      print('Request Error: $e');
-      if (e.toString().contains('FormatException')) {
-        throw Exception(
-          'خطأ في تنسيق البيانات من الخادم - تأكد من أن الخادم يعمل بشكل صحيح',
-        );
-      }
-      throw Exception('خطأ في الاتصال: $e');
+      print('Error searching services: $e');
+      return [];
     }
   }
 
@@ -807,7 +735,6 @@ class ApiService {
     }
   }
 
-<<<<<<< HEAD
   static Future<bool> cancelBooking(int bookingId) async {
     try {
       final data = await _makeRequest(
@@ -1210,9 +1137,6 @@ class ApiService {
   }
 
   // Reset password method
-=======
-  // ==================== استعادة كلمة المرور ====================
->>>>>>> cb84a2eea26d79ad48594283002ea73596c659d0
   static Future<bool> resetPassword(
     String identifier,
     String newPassword,
@@ -1294,7 +1218,6 @@ class ApiService {
     return response;
   }
 
-<<<<<<< HEAD
   // Login method
   static Future<Map<String, dynamic>> login({
     required String identifier,
@@ -1374,12 +1297,29 @@ class ApiService {
   static Future<Map<String, dynamic>> resetUserPassword({
     required String email,
     required String code,
-=======
-  // ==================== تحديث كلمة المرور ====================
+    required String newPassword,
+  }) async {
+    try {
+      final data = await _makeRequest(
+        'api/auth/reset_password.php',
+        body: json.encode({
+          'email': email,
+          'code': code,
+          'new_password': newPassword,
+        }),
+        isPost: true,
+      );
+      return data;
+    } catch (e) {
+      print('Error resetting password: $e');
+      return {'success': false, 'message': e.toString()};
+    }
+  }
+
+  // Update password method
   static Future<bool> updatePassword({
     required int userId,
     required String currentPassword,
->>>>>>> cb84a2eea26d79ad48594283002ea73596c659d0
     required String newPassword,
   }) async {
     final response = await _makeRequest(
