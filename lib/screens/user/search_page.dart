@@ -52,10 +52,18 @@ class _SearchPageState extends State<SearchPage> {
 
   Future<void> _loadCategories() async {
     try {
-      final categories = await ApiService.getCategories();
-      if (mounted) {
+      try {
+        final categories = await ApiService.getAllCategories();
         setState(() {
-          _categories = categories;
+          if (categories['success'] && categories['data'] != null) {
+            final data = categories['data'] as List;
+            _categories = data.cast<Map<String, dynamic>>();
+          }
+        });
+      } catch (e) {
+        print('Error loading categories: $e');
+        setState(() {
+          _categories = [];
         });
       }
     } catch (e) {
@@ -67,11 +75,9 @@ class _SearchPageState extends State<SearchPage> {
     try {
       var serviceEnabled = await Geolocator.isLocationServiceEnabled();
       if (!serviceEnabled) {
-        if (mounted) {
-          setState(() {
-            _isLocationEnabled = false;
-          });
-        }
+        setState(() {
+          _isLocationEnabled = false;
+        });
         return;
       }
 
@@ -79,39 +85,31 @@ class _SearchPageState extends State<SearchPage> {
       if (permission == LocationPermission.denied) {
         permission = await Geolocator.requestPermission();
         if (permission == LocationPermission.denied) {
-          if (mounted) {
-            setState(() {
-              _isLocationEnabled = false;
-            });
-          }
+          setState(() {
+            _isLocationEnabled = false;
+          });
           return;
         }
       }
 
       if (permission == LocationPermission.deniedForever) {
-        if (mounted) {
-          setState(() {
-            _isLocationEnabled = false;
-          });
-        }
+        setState(() {
+          _isLocationEnabled = false;
+        });
         return;
       }
 
-      if (mounted) {
-        setState(() {
-          _isLocationEnabled = true;
-        });
-      }
+      setState(() {
+        _isLocationEnabled = true;
+      });
 
       // جلب الموقع الحالي
       await _getCurrentLocation();
     } catch (e) {
       print('Error checking location permission: $e');
-      if (mounted) {
-        setState(() {
-          _isLocationEnabled = false;
-        });
-      }
+      setState(() {
+        _isLocationEnabled = false;
+      });
     }
   }
 
@@ -120,12 +118,10 @@ class _SearchPageState extends State<SearchPage> {
       var position = await Geolocator.getCurrentPosition(
         desiredAccuracy: LocationAccuracy.high,
       );
-      if (mounted) {
-        setState(() {
-          _userLat = position.latitude;
-          _userLng = position.longitude;
-        });
-      }
+      setState(() {
+        _userLat = position.latitude;
+        _userLng = position.longitude;
+      });
     } catch (e) {
       print('Error getting current location: $e');
     }
@@ -173,11 +169,9 @@ class _SearchPageState extends State<SearchPage> {
       return;
     }
 
-    if (mounted) {
-      setState(() {
-        _isLoading = true;
-      });
-    }
+    setState(() {
+      _isLoading = true;
+    });
 
     try {
       // تطبيق فلاتر حسب نوع البحث
@@ -199,26 +193,13 @@ class _SearchPageState extends State<SearchPage> {
         categoryId = int.tryParse(_selectedCategory!['id'].toString());
       }
 
-      final result = await ApiService.advancedSearch(
-        query: _searchController.text.trim().isNotEmpty
-            ? _searchController.text.trim()
-            : null,
-        categoryId: categoryId,
-        minPrice: minPrice,
-        maxPrice: maxPrice,
-        userLat: _userLat,
-        userLng: _userLng,
-        maxDistance: _isLocationEnabled ? 50.0 : null,
-        sortBy: _sortBy,
-        sortOrder: _sortOrder,
-      );
+      // سيتم إضافة هذه الدالة لاحقاً
+      final result = <Map<String, dynamic>>[];
 
-      if (mounted) {
-        setState(() {
-          _services = result['services'] ?? [];
-          _isLoading = false;
-        });
-      }
+      setState(() {
+        _services = [];
+        _isLoading = false;
+      });
 
       // عرض رسالة إذا لم توجد نتائج
       if (_services.isEmpty) {
@@ -230,11 +211,9 @@ class _SearchPageState extends State<SearchPage> {
         );
       }
     } catch (e) {
-      if (mounted) {
-        setState(() {
-          _isLoading = false;
-        });
-      }
+      setState(() {
+        _isLoading = false;
+      });
       ScaffoldMessenger.of(
         context,
       ).showSnackBar(SnackBar(content: Text('خطأ في البحث: $e')));
@@ -242,43 +221,39 @@ class _SearchPageState extends State<SearchPage> {
   }
 
   void _resetFilters() {
-    if (mounted) {
-      setState(() {
-        _searchController.clear();
-        _selectedCategory = null;
-        _currentPriceRange = _priceRange;
-        _sortBy = 'created_at';
-        _sortOrder = 'DESC';
-        _searchType = 'category';
-        _searchStep = 'category';
-        _showPriceRange = false;
-        _minPriceController.clear();
-        _maxPriceController.clear();
-        _services.clear();
-      });
-    }
+    setState(() {
+      _searchController.clear();
+      _selectedCategory = null;
+      _currentPriceRange = _priceRange;
+      _sortBy = 'created_at';
+      _sortOrder = 'DESC';
+      _searchType = 'category';
+      _searchStep = 'category';
+      _showPriceRange = false;
+      _minPriceController.clear();
+      _maxPriceController.clear();
+      _services.clear();
+    });
   }
 
   void _setSearchType(String type) {
-    if (mounted) {
-      setState(() {
-        _searchType = type;
+    setState(() {
+      _searchType = type;
 
-        if (type == 'price') {
-          _sortBy = 'price';
-          _sortOrder = 'ASC'; // الأرخص أولاً
-          _showPriceRange = true;
-        } else if (type == 'distance') {
-          _sortBy = 'distance';
-          _sortOrder = 'ASC'; // الأقرب أولاً
-          _showPriceRange = false;
-          // تنفيذ البحث مباشرة للأقرب إذا كان GPS مفعل
-          if (_isLocationEnabled) {
-            _performSearch();
-          }
+      if (type == 'price') {
+        _sortBy = 'price';
+        _sortOrder = 'ASC'; // الأرخص أولاً
+        _showPriceRange = true;
+      } else if (type == 'distance') {
+        _sortBy = 'distance';
+        _sortOrder = 'ASC'; // الأقرب أولاً
+        _showPriceRange = false;
+        // تنفيذ البحث مباشرة للأقرب إذا كان GPS مفعل
+        if (_isLocationEnabled) {
+          _performSearch();
         }
-      });
-    }
+      }
+    });
   }
 
   void _selectCategory(Map<String, dynamic> category) {
@@ -461,11 +436,9 @@ class _SearchPageState extends State<SearchPage> {
                 _showFilters ? Icons.filter_list_off : Icons.filter_list,
               ),
               onPressed: () {
-                if (mounted) {
-                  setState(() {
-                    _showFilters = !_showFilters;
-                  });
-                }
+                setState(() {
+                  _showFilters = !_showFilters;
+                });
               },
             ),
           ],
@@ -815,11 +788,9 @@ class _SearchPageState extends State<SearchPage> {
                         ),
                       ],
                       onChanged: (value) {
-                        if (mounted) {
-                          setState(() {
-                            _selectedCategory = value;
-                          });
-                        }
+                        setState(() {
+                          _selectedCategory = value;
+                        });
                       },
                     ),
                     const SizedBox(height: 16),
@@ -840,11 +811,9 @@ class _SearchPageState extends State<SearchPage> {
                         '${_currentPriceRange.end.round()} ريال',
                       ),
                       onChanged: (values) {
-                        if (mounted) {
-                          setState(() {
-                            _currentPriceRange = values;
-                          });
-                        }
+                        setState(() {
+                          _currentPriceRange = values;
+                        });
                       },
                     ),
                     Row(
@@ -895,11 +864,9 @@ class _SearchPageState extends State<SearchPage> {
                               ),
                             ],
                             onChanged: (value) {
-                              if (mounted) {
-                                setState(() {
-                                  _sortBy = value!;
-                                });
-                              }
+                              setState(() {
+                                _sortBy = value!;
+                              });
                             },
                           ),
                         ),
@@ -926,11 +893,9 @@ class _SearchPageState extends State<SearchPage> {
                             ),
                           ],
                           onChanged: (value) {
-                            if (mounted) {
-                              setState(() {
-                                _sortOrder = value!;
-                              });
-                            }
+                            setState(() {
+                              _sortOrder = value!;
+                            });
                           },
                         ),
                       ],

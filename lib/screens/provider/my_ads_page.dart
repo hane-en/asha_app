@@ -35,7 +35,8 @@ class _MyAdsPageState extends State<MyAdsPage> {
 
   Future<void> _loadAds() async {
     try {
-      final ads = await ApiService.getAds();
+      // سيتم إضافة هذه الدالة لاحقاً
+      final ads = <AdModel>[];
       setState(() {
         _ads = ads.where((ad) => ad.providerId == _userId).toList();
         _isLoading = false;
@@ -68,7 +69,8 @@ class _MyAdsPageState extends State<MyAdsPage> {
 
     if (confirmed == true) {
       try {
-        final success = await ApiService.deleteAd(ad.id, providerId: _userId);
+        // سيتم إضافة هذه الدالة لاحقاً
+        final success = false;
         if (success) {
           ScaffoldMessenger.of(context).showSnackBar(
             const SnackBar(

@@ -1,44 +1,47 @@
-
 <?php
-/**
- * API endpoint لجلب الإعلانات النشطة
- * GET /api/ads/get_active_ads.php
- */
+require_once '../config.php';
+require_once '../database.php';
 
-require_once '../../config.php';
-require_once '../../database.php';
-
-// إعداد CORS
+if (!headers_sent()) {
+    header('Content-Type: application/json; charset=utf-8');
+}
 header('Access-Control-Allow-Origin: *');
-header('Access-Control-Allow-Methods: GET, OPTIONS');
-header('Access-Control-Allow-Headers: Content-Type, Authorization, X-Requested-With');
+header('Access-Control-Allow-Methods: GET, POST, OPTIONS');
+header('Access-Control-Allow-Headers: Content-Type');
 
-// معالجة preflight requests
 if ($_SERVER['REQUEST_METHOD'] === 'OPTIONS') {
     http_response_code(200);
-    exit();
-}
-
-// التحقق من طريقة الطلب
-if ($_SERVER['REQUEST_METHOD'] !== 'GET') {
-    errorResponse('طريقة الطلب غير مدعومة', 405);
+    exit;
 }
 
 try {
     $database = new Database();
-    $database->connect();
+    $conn = $database->connect();
     
-    // جلب الإعلانات النشطة التي لم تنته صلاحيتها بعد
-    $query = "
-        SELECT 
-            a.*,
-            u.name as provider_name
-        FROM ads a
-        LEFT JOIN users u ON a.provider_id = u.id
-        WHERE a.is_active = 1 
-        AND (a.end_date IS NULL OR a.end_date >= CURDATE()) 
-        ORDER BY a.created_at DESC
-    ";
+    if (!$conn) {
+        throw new Exception("خطأ في الاتصال بقاعدة البيانات");
+    }
+    
+    // جلب الإعلانات النشطة مع معلومات المزود
+    $query = "SELECT 
+                a.id,
+                a.title,
+                a.description,
+                a.image,
+                a.link_url,
+                a.is_active,
+                a.is_featured,
+                a.start_date,
+                a.end_date,
+                a.created_at,
+                u.name as provider_name,
+                u.id as provider_id
+              FROM ads a
+              LEFT JOIN users u ON a.provider_id = u.id
+              WHERE a.is_active = 1
+              ORDER BY a.is_featured DESC, a.created_at DESC";
+    
+    error_log("Ads API: Executing query: $query");
     
     $ads = $database->select($query);
     
@@ -46,40 +49,26 @@ try {
         throw new Exception('خطأ في جلب الإعلانات من قاعدة البيانات');
     }
     
-    // معالجة البيانات
+    error_log("Ads API: Found " . count($ads) . " ads");
+    
+    // تحويل البيانات للتأكد من التوافق مع Flutter
     foreach ($ads as &$ad) {
-        // تحويل الأرقام
         $ad['id'] = (int)$ad['id'];
-        $ad['provider_id'] = $ad['provider_id'] ? (int)$ad['provider_id'] : null;
-        $ad['priority'] = isset($ad['priority']) ? (int)$ad['priority'] : 0;
-        
-        // تحويل القيم المنطقية
         $ad['is_active'] = (bool)$ad['is_active'];
+        $ad['is_featured'] = (bool)$ad['is_featured'];
+        $ad['provider_id'] = $ad['provider_id'] ? (int)$ad['provider_id'] : null;
+        $ad['has_link'] = !empty($ad['link_url']);
         
-        // تحويل التواريخ
-        if ($ad['start_date']) {
-            $ad['start_date'] = date('Y-m-d H:i:s', strtotime($ad['start_date']));
-        }
-        if ($ad['end_date']) {
-            $ad['end_date'] = date('Y-m-d H:i:s', strtotime($ad['end_date']));
-        }
-        if ($ad['created_at']) {
-            $ad['created_at'] = date('Y-m-d H:i:s', strtotime($ad['created_at']));
-        }
-        if ($ad['updated_at']) {
-            $ad['updated_at'] = date('Y-m-d H:i:s', strtotime($ad['updated_at']));
-        }
-        
-        // تحويل JSON إذا كان موجود
-        if (isset($ad['images'])) {
-            $ad['images'] = json_decode($ad['images'], true) ?: [];
-        }
+        // إضافة حقول إضافية مطلوبة للتطبيق
+        $ad['imageUrl'] = $ad['image'];
+        $ad['providerName'] = $ad['provider_name'] ?? 'مزود غير محدد';
     }
     
-    successResponse($ads, 'تم جلب الإعلانات النشطة بنجاح');
+    successResponse($ads, 'تم جلب الإعلانات بنجاح');
     
 } catch (Exception $e) {
-    logError("Get active ads error: " . $e->getMessage());
-    errorResponse('حدث خطأ أثناء جلب الإعلانات', 500);
+    error_log("Ads API Error: " . $e->getMessage());
+    logError("Get ads error: " . $e->getMessage());
+    errorResponse('خطأ في قاعدة البيانات: ' . $e->getMessage(), 500);
 }
 ?>

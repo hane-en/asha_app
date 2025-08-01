@@ -1,88 +1,101 @@
 <?php
-/**
- * API endpoint لجلب جميع الحجوزات
- * GET /api/bookings/get_all.php
- */
-
 header('Content-Type: application/json; charset=utf-8');
 header('Access-Control-Allow-Origin: *');
-header('Access-Control-Allow-Methods: GET, POST, OPTIONS');
+header('Access-Control-Allow-Methods: GET, OPTIONS');
 header('Access-Control-Allow-Headers: Content-Type, Authorization');
 
-if ($_SERVER['REQUEST_METHOD'] === 'OPTIONS') {
-    exit(0);
+// التعامل مع طلبات OPTIONS
+if (isset($_SERVER['REQUEST_METHOD']) && $_SERVER['REQUEST_METHOD'] === 'OPTIONS') {
+    http_response_code(200);
+    exit();
 }
 
-require_once '../../config.php';
-require_once '../../database.php';
+require_once '../config/database.php';
 
 try {
-    $database = new Database();
-    $database->connect();
+    $db = new Database();
+    $pdo = $db->getConnection();
     
-    // جلب جميع الحجوزات مع معلومات الخدمة والمستخدم
-    $query = "SELECT 
-                b.id, b.service_id, b.user_id, b.booking_date, b.status, b.total_amount,
-                b.created_at, b.updated_at,
-                s.title as service_title,
+    if (!$pdo) {
+        throw new Exception('فشل في الاتصال بقاعدة البيانات');
+    }
+    
+    $userId = isset($_GET['user_id']) ? (int)$_GET['user_id'] : null;
+    $serviceId = isset($_GET['service_id']) ? (int)$_GET['service_id'] : null;
+    $status = isset($_GET['status']) ? $_GET['status'] : null;
+    
+    $sql = "SELECT 
+                b.id,
+                b.user_id,
+                b.service_id,
+                b.booking_date,
+                b.booking_time,
+                b.notes,
+                b.status,
+                b.created_at,
                 u.name as user_name,
-                p.name as provider_name
-              FROM bookings b
-              LEFT JOIN services s ON b.service_id = s.id
-              LEFT JOIN users u ON b.user_id = u.id
-              LEFT JOIN users p ON s.provider_id = p.id
-              ORDER BY b.created_at DESC";
+                u.email as user_email,
+                u.phone as user_phone,
+                s.title as service_name,
+                s.price as service_price,
+                provider.name as provider_name
+            FROM bookings b
+            INNER JOIN users u ON b.user_id = u.id
+            INNER JOIN services s ON b.service_id = s.id
+            INNER JOIN users provider ON s.provider_id = provider.id
+            WHERE 1=1";
     
-    // إضافة debug
-    error_log("Executing bookings query: " . $query);
+    $params = [];
     
-    $bookings = $database->select($query);
-    
-    if ($bookings === false) {
-        throw new Exception('خطأ في جلب الحجوزات من قاعدة البيانات');
+    if ($userId) {
+        $sql .= " AND b.user_id = ?";
+        $params[] = $userId;
     }
     
-    // إضافة debug
-    error_log("Bookings found: " . count($bookings));
-    
-    // تحويل البيانات إلى التنسيق المطلوب
-    $formattedBookings = [];
-    foreach ($bookings as $booking) {
-        $formattedBookings[] = [
-            'id' => (int)$booking['id'],
-            'service_id' => (int)$booking['service_id'],
-            'user_id' => (int)$booking['user_id'],
-            'booking_date' => $booking['booking_date'],
-            'status' => $booking['status'],
-            'total_amount' => (float)$booking['total_amount'],
-            'service_title' => $booking['service_title'],
-            'user_name' => $booking['user_name'],
-            'provider_name' => $booking['provider_name'],
-            'created_at' => $booking['created_at'],
-            'updated_at' => $booking['updated_at']
-        ];
+    if ($serviceId) {
+        $sql .= " AND b.service_id = ?";
+        $params[] = $serviceId;
     }
     
-    $response = [
+    if ($status) {
+        $sql .= " AND b.status = ?";
+        $params[] = $status;
+    }
+    
+    $sql .= " ORDER BY b.created_at DESC";
+    
+    $stmt = $pdo->prepare($sql);
+    $stmt->execute($params);
+    $bookings = $stmt->fetchAll();
+    
+    // تحويل أنواع البيانات
+    foreach ($bookings as &$booking) {
+        $booking['id'] = (int)$booking['id'];
+        $booking['user_id'] = (int)$booking['user_id'];
+        $booking['service_id'] = (int)$booking['service_id'];
+        $booking['service_price'] = (float)$booking['service_price'];
+    }
+    
+    echo json_encode([
         'success' => true,
-        'message' => 'تم جلب الحجوزات بنجاح',
-        'timestamp' => date('Y-m-d H:i:s'),
-        'data' => $formattedBookings,
-        'count' => count($formattedBookings)
-    ];
+        'data' => $bookings,
+        'count' => count($bookings),
+        'timestamp' => date('Y-m-d H:i:s')
+    ], JSON_UNESCAPED_UNICODE);
     
-    echo json_encode($response, JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE);
-    
-} catch (Exception $e) {
-    $errorResponse = [
-        'success' => false,
-        'message' => 'خطأ في جلب الحجوزات: ' . $e->getMessage(),
-        'timestamp' => date('Y-m-d H:i:s'),
-        'data' => [],
-        'count' => 0
-    ];
-    
+} catch (PDOException $e) {
     http_response_code(500);
-    echo json_encode($errorResponse, JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE);
+    echo json_encode([
+        'success' => false,
+        'message' => 'خطأ في قاعدة البيانات: ' . $e->getMessage(),
+        'timestamp' => date('Y-m-d H:i:s')
+    ], JSON_UNESCAPED_UNICODE);
+} catch (Exception $e) {
+    http_response_code(500);
+    echo json_encode([
+        'success' => false,
+        'message' => 'خطأ في الخادم: ' . $e->getMessage(),
+        'timestamp' => date('Y-m-d H:i:s')
+    ], JSON_UNESCAPED_UNICODE);
 }
 ?> 

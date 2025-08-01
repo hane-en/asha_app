@@ -1,85 +1,104 @@
 <?php
-/**
- * API endpoint لجلب جميع المفضلة
- * GET /api/favorites/get_all.php
- */
-
 header('Content-Type: application/json; charset=utf-8');
 header('Access-Control-Allow-Origin: *');
-header('Access-Control-Allow-Methods: GET, POST, OPTIONS');
+header('Access-Control-Allow-Methods: GET, OPTIONS');
 header('Access-Control-Allow-Headers: Content-Type, Authorization');
 
-if ($_SERVER['REQUEST_METHOD'] === 'OPTIONS') {
-    exit(0);
+// التعامل مع طلبات OPTIONS
+if (isset($_SERVER['REQUEST_METHOD']) && $_SERVER['REQUEST_METHOD'] === 'OPTIONS') {
+    http_response_code(200);
+    exit();
 }
 
-require_once '../../config.php';
-require_once '../../database.php';
+require_once '../config/database.php';
 
 try {
-    $database = new Database();
-    $database->connect();
+    $db = new Database();
+    $pdo = $db->getConnection();
     
-    // جلب جميع المفضلة مع معلومات الخدمة والمستخدم
-    $query = "SELECT 
-                f.id, f.service_id, f.user_id, f.created_at,
-                s.title as service_title,
+    if (!$pdo) {
+        throw new Exception('فشل في الاتصال بقاعدة البيانات');
+    }
+    
+    $userId = isset($_GET['user_id']) ? (int)$_GET['user_id'] : null;
+    
+    if (!$userId) {
+        http_response_code(400);
+        echo json_encode([
+            'success' => false, 
+            'message' => 'معرف المستخدم مطلوب',
+            'timestamp' => date('Y-m-d H:i:s')
+        ], JSON_UNESCAPED_UNICODE);
+        exit();
+    }
+    
+    $sql = "SELECT 
+                f.id,
+                f.user_id,
+                f.service_id,
+                f.created_at,
+                s.title as service_name,
+                s.description as service_description,
                 s.price as service_price,
-                u.name as user_name,
-                p.name as provider_name
-              FROM favorites f
-              LEFT JOIN services s ON f.service_id = s.id
-              LEFT JOIN users u ON f.user_id = u.id
-              LEFT JOIN users p ON s.provider_id = p.id
-              ORDER BY f.created_at DESC";
+                s.images as service_images,
+                provider.name as provider_name,
+                provider.phone as provider_phone,
+                c.name as category_name
+            FROM favorites f
+            INNER JOIN services s ON f.service_id = s.id
+            INNER JOIN users provider ON s.provider_id = provider.id
+            INNER JOIN categories c ON s.category_id = c.id
+            WHERE f.user_id = ? AND s.is_active = 1
+            ORDER BY f.created_at DESC";
     
-    // إضافة debug
-    error_log("Executing favorites query: " . $query);
+    $stmt = $pdo->prepare($sql);
+    $stmt->execute([$userId]);
+    $favorites = $stmt->fetchAll();
     
-    $favorites = $database->select($query);
-    
-    if ($favorites === false) {
-        throw new Exception('خطأ في جلب المفضلة من قاعدة البيانات');
+    // إضافة معلومات إضافية لكل مفضلة
+    foreach ($favorites as &$favorite) {
+        // تحويل الأرقام إلى int
+        $favorite['id'] = (int)$favorite['id'];
+        $favorite['user_id'] = (int)$favorite['user_id'];
+        $favorite['service_id'] = (int)$favorite['service_id'];
+        $favorite['service_price'] = (float)$favorite['service_price'];
+        
+        // جلب عدد التقييمات
+        $reviewStmt = $pdo->prepare("SELECT COUNT(*) as count, AVG(rating) as avg_rating FROM reviews WHERE service_id = ?");
+        $reviewStmt->execute([$favorite['service_id']]);
+        $reviewData = $reviewStmt->fetch();
+        
+        $favorite['reviews_count'] = (int)$reviewData['count'];
+        $favorite['average_rating'] = $reviewData['avg_rating'] ? (float)round($reviewData['avg_rating'], 1) : 0.0;
+        
+        // تحويل الصور من JSON
+        if ($favorite['service_images']) {
+            $favorite['service_images'] = json_decode($favorite['service_images'], true) ?: [];
+        } else {
+            $favorite['service_images'] = [];
+        }
     }
     
-    // إضافة debug
-    error_log("Favorites found: " . count($favorites));
-    
-    // تحويل البيانات إلى التنسيق المطلوب
-    $formattedFavorites = [];
-    foreach ($favorites as $favorite) {
-        $formattedFavorites[] = [
-            'id' => (int)$favorite['id'],
-            'service_id' => (int)$favorite['service_id'],
-            'user_id' => (int)$favorite['user_id'],
-            'service_title' => $favorite['service_title'],
-            'service_price' => (float)$favorite['service_price'],
-            'user_name' => $favorite['user_name'],
-            'provider_name' => $favorite['provider_name'],
-            'created_at' => $favorite['created_at']
-        ];
-    }
-    
-    $response = [
+    echo json_encode([
         'success' => true,
-        'message' => 'تم جلب المفضلة بنجاح',
-        'timestamp' => date('Y-m-d H:i:s'),
-        'data' => $formattedFavorites,
-        'count' => count($formattedFavorites)
-    ];
+        'data' => $favorites,
+        'count' => count($favorites),
+        'timestamp' => date('Y-m-d H:i:s')
+    ], JSON_UNESCAPED_UNICODE);
     
-    echo json_encode($response, JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE);
-    
-} catch (Exception $e) {
-    $errorResponse = [
-        'success' => false,
-        'message' => 'خطأ في جلب المفضلة: ' . $e->getMessage(),
-        'timestamp' => date('Y-m-d H:i:s'),
-        'data' => [],
-        'count' => 0
-    ];
-    
+} catch (PDOException $e) {
     http_response_code(500);
-    echo json_encode($errorResponse, JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE);
+    echo json_encode([
+        'success' => false,
+        'message' => 'خطأ في قاعدة البيانات: ' . $e->getMessage(),
+        'timestamp' => date('Y-m-d H:i:s')
+    ], JSON_UNESCAPED_UNICODE);
+} catch (Exception $e) {
+    http_response_code(500);
+    echo json_encode([
+        'success' => false,
+        'message' => 'خطأ في الخادم: ' . $e->getMessage(),
+        'timestamp' => date('Y-m-d H:i:s')
+    ], JSON_UNESCAPED_UNICODE);
 }
 ?> 

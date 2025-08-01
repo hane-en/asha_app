@@ -1,37 +1,38 @@
 import 'dart:convert';
 import 'package:http/http.dart' as http;
-import '../models/service_model.dart';
 import '../config/config.dart';
+import '../constants/api_constants.dart';
 
 class ServicesService {
-  final String baseUrl = Config.apiBaseUrl;
+  static const String baseUrl = Config.apiBaseUrl;
 
   Future<Map<String, dynamic>> getAllServices({
+    int? categoryId,
+    int? providerId,
+    String? search,
     int page = 1,
     int limit = 20,
-    String? categoryId,
-    String? search,
-    String? location,
-    double? minPrice,
-    double? maxPrice,
-    String? sortBy,
-    String? sortOrder,
   }) async {
     try {
       print('🔍 Loading services...');
+      print(
+        '📋 Parameters: categoryId=$categoryId, providerId=$providerId, search=$search, page=$page, limit=$limit',
+      );
+
       final queryParams = <String, String>{
         'page': page.toString(),
         'limit': limit.toString(),
       };
 
-      if (categoryId != null) queryParams['category_id'] = categoryId;
-      if (search != null) queryParams['search'] = search;
-      if (location != null)
-        queryParams['city'] = location; // تغيير من location إلى city
-      if (minPrice != null) queryParams['min_price'] = minPrice.toString();
-      if (maxPrice != null) queryParams['max_price'] = maxPrice.toString();
-      if (sortBy != null) queryParams['sort_by'] = sortBy;
-      if (sortOrder != null) queryParams['sort_order'] = sortOrder;
+      if (categoryId != null) {
+        queryParams['category_id'] = categoryId.toString();
+      }
+      if (providerId != null) {
+        queryParams['provider_id'] = providerId.toString();
+      }
+      if (search != null && search.isNotEmpty) {
+        queryParams['search'] = search;
+      }
 
       final queryString = queryParams.entries
           .map((e) => '${e.key}=${Uri.encodeComponent(e.value)}')
@@ -47,18 +48,8 @@ class ServicesService {
 
       if (response.statusCode == 200) {
         final data = json.decode(response.body);
-        print('✅ Services data: $data');
-
-        // التأكد من أن البيانات في الشكل الصحيح
-        if (data['success'] == true) {
-          return {'success': true, 'data': data['data'] ?? data};
-        } else {
-          print('❌ API returned success: false');
-          return {
-            'success': false,
-            'message': data['message'] ?? 'فشل في تحميل الخدمات',
-          };
-        }
+        print('✅ Service data: $data');
+        return {'success': true, 'data': data};
       } else {
         print('❌ HTTP Error: ${response.statusCode}');
         return {'success': false, 'message': 'فشل في تحميل الخدمات'};
@@ -71,7 +62,7 @@ class ServicesService {
 
   Future<Map<String, dynamic>> getServiceById(int serviceId) async {
     try {
-      print('🔍 Loading service by ID: $serviceId');
+      print('🔍 Loading service details: $serviceId');
       final uri = Uri.parse(
         '$baseUrl/api/services/get_by_id.php?id=$serviceId',
       );
@@ -166,7 +157,7 @@ class ServicesService {
 
   Future<Map<String, dynamic>> getFeaturedServices() async {
     try {
-      final uri = Uri.parse('$baseUrl/services/featured');
+      final uri = Uri.parse('$baseUrl${ApiConstants.getFeaturedServices}');
       final response = await http.get(uri);
 
       if (response.statusCode == 200) {

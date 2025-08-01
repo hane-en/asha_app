@@ -4,13 +4,16 @@
  * GET /api/services/get_categories.php
  */
 
-require_once '../../config.php';
-require_once '../../database.php';
+require_once '../config.php';
+require_once '../database.php';
 
 // إعداد CORS
 header('Access-Control-Allow-Origin: *');
-header('Access-Control-Allow-Methods: GET, OPTIONS');
-header('Access-Control-Allow-Headers: Content-Type, Authorization, X-Requested-With');
+if (!headers_sent()) {
+    header('Access-Control-Allow-Methods: GET, OPTIONS');
+    header('Access-Control-Allow-Headers: Content-Type, Authorization, X-Requested-With');
+    header('Content-Type: application/json; charset=utf-8');
+}
 
 // معالجة preflight requests
 if ($_SERVER['REQUEST_METHOD'] === 'OPTIONS') {
@@ -25,7 +28,11 @@ if ($_SERVER['REQUEST_METHOD'] !== 'GET') {
 
 try {
     $database = new Database();
-    $database->connect();
+    $conn = $database->connect();
+    
+    if (!$conn) {
+        throw new Exception('فشل في الاتصال بقاعدة البيانات');
+    }
     
     // جلب جميع الفئات النشطة
     $query = "SELECT id, name, description, image, is_active, created_at 
@@ -51,12 +58,18 @@ try {
         if ($category['created_at']) {
             $category['created_at'] = date('Y-m-d H:i:s', strtotime($category['created_at']));
         }
+        
+        // إضافة حقول إضافية مطلوبة للتطبيق
+        $category['title'] = $category['name'];
+        $category['servicesCount'] = 0; // سيتم تحديثه لاحقاً
+        $category['icon'] = 'category';
+        $category['color'] = '#8e24aa';
     }
     
     successResponse($categories, 'تم جلب الفئات بنجاح');
     
 } catch (Exception $e) {
     logError("Get categories error: " . $e->getMessage());
-    errorResponse('حدث خطأ أثناء جلب الفئات', 500);
+    errorResponse('حدث خطأ أثناء جلب الفئات: ' . $e->getMessage(), 500);
 }
 ?> 

@@ -1,233 +1,174 @@
 <?php
-/**
- * API endpoint لجلب جميع الخدمات
- * يدعم التصفية والترتيب والترقيم
- */
+header('Content-Type: application/json; charset=utf-8');
+header('Access-Control-Allow-Origin: *');
+header('Access-Control-Allow-Methods: GET, POST, OPTIONS');
+header('Access-Control-Allow-Headers: Content-Type, Authorization');
 
-// إيقاف عرض الأخطاء لمنع ظهور warnings في JSON
-error_reporting(0);
-ini_set('display_errors', 0);
-
-require_once '../../config.php';
-require_once '../../database.php';
-require_once '../../middleware.php';
-
-// التحقق من طريقة الطلب
-if ($_SERVER['REQUEST_METHOD'] !== 'GET') {
-    errorResponse('طريقة الطلب غير مدعومة', 405);
+// التعامل مع طلبات OPTIONS
+if (isset($_SERVER['REQUEST_METHOD']) && $_SERVER['REQUEST_METHOD'] === 'OPTIONS') {
+    http_response_code(200);
+    exit();
 }
 
-// الحصول على المعاملات
-$page = isset($_GET['page']) ? (int)$_GET['page'] : 1;
-$limit = isset($_GET['limit']) ? (int)$_GET['limit'] : PAGINATION_LIMIT;
-$category_id = isset($_GET['category_id']) ? (int)$_GET['category_id'] : null;
-$city = isset($_GET['city']) ? sanitizeInput($_GET['city']) : null;
-$search = isset($_GET['search']) ? sanitizeInput($_GET['search']) : null;
-$min_price = isset($_GET['min_price']) ? (float)$_GET['min_price'] : null;
-$max_price = isset($_GET['max_price']) ? (float)$_GET['max_price'] : null;
-$is_featured = isset($_GET['is_featured']) ? (bool)$_GET['is_featured'] : null;
-$sort_by = isset($_GET['sort_by']) ? sanitizeInput($_GET['sort_by']) : 'created_at';
-$sort_order = isset($_GET['sort_order']) ? sanitizeInput($_GET['sort_order']) : 'DESC';
+require_once '../config/database.php';
 
 try {
-    $database = new Database();
-    $database->connect();
-
-    // فحص حالة جدول services
-    $checkQuery = "SELECT COUNT(*) as total FROM services";
-    $totalServices = $database->selectOne($checkQuery);
-    error_log("Total services in database: " . $totalServices['total']);
+    $db = new Database();
+    $pdo = $db->getConnection();
     
-    $activeServices = $database->selectOne("SELECT COUNT(*) as total FROM services WHERE is_active = 1");
-    error_log("Active services in database: " . $activeServices['total']);
-
-    // بناء الاستعلام
-    $whereConditions = []; // إزالة جميع الشروط مؤقتاً
+    if (!$pdo) {
+        throw new Exception('فشل في الاتصال بقاعدة البيانات');
+    }
+    
+    $categoryId = isset($_GET['category_id']) ? (int)$_GET['category_id'] : null;
+    $providerId = isset($_GET['provider_id']) ? (int)$_GET['provider_id'] : null;
+    $search = isset($_GET['search']) ? $_GET['search'] : null;
+    
+    $sql = "SELECT 
+                s.id,
+                s.title as name,
+                s.description,
+                s.price,
+                s.images,
+                s.is_active,
+                s.created_at,
+                u.id as provider_id,
+                u.name as provider_name,
+                u.phone as provider_phone,
+                u.email as provider_email,
+                c.id as category_id,
+                c.name as category_name
+            FROM services s
+            INNER JOIN users u ON s.provider_id = u.id AND u.user_type = 'provider'
+            INNER JOIN categories c ON s.category_id = c.id
+            WHERE s.is_active = 1";
+    
     $params = [];
-
-    if ($category_id) {
-        $whereConditions[] = 's.category_id = :category_id';
-        $params['category_id'] = $category_id;
+    
+    if ($categoryId) {
+        $sql .= " AND s.category_id = ?";
+        $params[] = $categoryId;
     }
-
-    if ($city) {
-        $whereConditions[] = 's.city = :city';
-        $params['city'] = $city;
+    
+    if ($providerId) {
+        $sql .= " AND s.provider_id = ?";
+        $params[] = $providerId;
     }
-
+    
     if ($search) {
-        $whereConditions[] = '(s.title LIKE :search OR s.description LIKE :search OR s.tags LIKE :search)';
-        $params['search'] = "%{$search}%";
-    }
-
-    if ($min_price !== null) {
-        $whereConditions[] = 's.price >= :min_price';
-        $params['min_price'] = $min_price;
-    }
-
-    if ($max_price !== null) {
-        $whereConditions[] = 's.price <= :max_price';
-        $params['max_price'] = $max_price;
-    }
-
-    if ($is_featured !== null) {
-        $whereConditions[] = 's.is_featured = :is_featured';
-        $params['is_featured'] = $is_featured ? 1 : 0;
-    }
-
-    $whereClause = implode(' AND ', $whereConditions);
-
-    // إضافة debugging
-    error_log("Services query WHERE clause: " . $whereClause);
-    error_log("Services query params: " . json_encode($params));
-
-    // الاستعلام الرئيسي - مبسط للاختبار
-    $query = "
-        SELECT 
-            s.*,
-            COALESCE(c.name, 'غير محدد') as category_name,
-            COALESCE(u.name, 'غير محدد') as provider_name
-        FROM services s
-        LEFT JOIN categories c ON s.category_id = c.id
-        LEFT JOIN users u ON s.provider_id = u.id
-    ";
-    
-    // إضافة WHERE clause إذا كانت موجودة
-    if (!empty($whereConditions)) {
-        $query .= " WHERE " . $whereClause;
+        $sql .= " AND (s.title LIKE ? OR s.description LIKE ? OR u.name LIKE ?)";
+        $searchTerm = "%$search%";
+        $params[] = $searchTerm;
+        $params[] = $searchTerm;
+        $params[] = $searchTerm;
     }
     
-    $query .= " ORDER BY s.created_at DESC LIMIT ? OFFSET ?";
-
-    $offset = ($page - 1) * $limit;
-
-    // إضافة debugging للـ parameters
-    error_log("Page: " . $page);
-    error_log("Limit: " . $limit);
-    error_log("Offset: " . $offset);
-    error_log("Where conditions: " . json_encode($whereConditions));
-    error_log("Where clause: " . $whereClause);
-
-    // إضافة debugging للاستعلام
-    error_log("Full query: " . $query);
-
-    // استخدام الاستعلام مباشرة بدون parameters للـ LIMIT و OFFSET
-    $finalQuery = str_replace(['LIMIT ? OFFSET ?'], ["LIMIT $limit OFFSET $offset"], $query);
-    error_log("Final query: " . $finalQuery);
-
-    // إضافة شروط WHERE للخدمات النشطة فقط
-    if (empty($whereConditions)) {
-        $finalQuery = str_replace('FROM services s', 'FROM services s WHERE s.is_active = 1', $finalQuery);
-    } else {
-        $finalQuery = str_replace('FROM services s', 'FROM services s WHERE s.is_active = 1', $finalQuery);
-    }
-
-    // استخدام الاستعلام بدون parameters إذا لم تكن هناك شروط WHERE
-    if (empty($whereConditions)) {
-        $services = $database->select($finalQuery);
-    } else {
-        // استخدام الاستعلام مع parameters إذا كانت هناك شروط WHERE
-        $services = $database->select($finalQuery, $params);
-    }
+    $sql .= " ORDER BY s.created_at DESC";
     
-    // إضافة debugging
-    error_log("Services result type: " . gettype($services));
-    error_log("Services count: " . (is_array($services) ? count($services) : 'not array'));
+    $stmt = $pdo->prepare($sql);
+    $stmt->execute($params);
+    $services = $stmt->fetchAll();
     
-    // التأكد من أن النتيجة صحيحة
-    if ($services === false || !is_array($services)) {
-        error_log("Database select returned false or invalid result - trying simple query");
-        // محاولة استعلام بسيط
-        $simpleQuery = "SELECT * FROM services WHERE is_active = 1 LIMIT 10";
-        $services = $database->select($simpleQuery);
+    // إضافة معلومات إضافية لكل خدمة
+    foreach ($services as &$service) {
+        // تحويل الأرقام إلى int
+        $service['id'] = (int)$service['id'];
+        $service['provider_id'] = (int)$service['provider_id'];
+        $service['category_id'] = (int)$service['category_id'];
+        $service['price'] = (float)$service['price'];
         
-        if ($services === false || !is_array($services)) {
-            error_log("Simple query also failed");
-            $services = [];
+        // تحويل القيم المنطقية
+        $service['is_active'] = (bool)$service['is_active'];
+        
+        // جلب عدد التقييمات
+        $reviewStmt = $pdo->prepare("SELECT COUNT(*) as count, AVG(rating) as avg_rating FROM reviews WHERE service_id = ?");
+        $reviewStmt->execute([$service['id']]);
+        $reviewData = $reviewStmt->fetch();
+        
+        $service['reviews_count'] = (int)$reviewData['count'];
+        $service['average_rating'] = $reviewData['avg_rating'] ? (float)round($reviewData['avg_rating'], 1) : 0.0;
+        
+        // جلب عدد الحجوزات
+        $bookingStmt = $pdo->prepare("SELECT COUNT(*) as count FROM bookings WHERE service_id = ? AND status = 'completed'");
+        $bookingStmt->execute([$service['id']]);
+        $bookingData = $bookingStmt->fetch();
+        
+        $service['bookings_count'] = (int)$bookingData['count'];
+        
+        // جلب العروض للخدمة
+        $offersStmt = $pdo->prepare("
+            SELECT 
+                o.id,
+                o.title,
+                o.description,
+                o.discount_percentage,
+                o.start_date as valid_from,
+                o.end_date as valid_until,
+                o.is_active,
+                o.created_at
+            FROM offers o 
+            WHERE o.service_id = ? AND o.is_active = 1
+            ORDER BY o.discount_percentage DESC
+        ");
+        $offersStmt->execute([$service['id']]);
+        $offers = $offersStmt->fetchAll();
+        
+        // إضافة معلومات العروض
+        foreach ($offers as &$offer) {
+            $offer['id'] = (int)$offer['id'];
+            $offer['discount_percentage'] = (int)$offer['discount_percentage'];
+            $offer['is_active'] = (bool)$offer['is_active'];
+            
+            // التحقق من صلاحية العرض
+            $now = new DateTime();
+            $startDate = new DateTime($offer['valid_from']);
+            $endDate = new DateTime($offer['valid_until']);
+            $offer['is_valid'] = $now >= $startDate && $now <= $endDate && $offer['is_active'];
+        }
+        
+        $service['offers'] = $offers;
+        $service['has_offers'] = count($offers) > 0;
+        
+        // جلب أفضل عرض
+        $bestOffer = null;
+        foreach ($offers as $offer) {
+            if ($offer['is_valid']) {
+                if ($bestOffer === null || $offer['discount_percentage'] > $bestOffer['discount_percentage']) {
+                    $bestOffer = $offer;
+                }
+            }
+        }
+        $service['best_offer'] = $bestOffer;
+        
+        // تحويل الصور من JSON
+        if ($service['images']) {
+            $service['images'] = json_decode($service['images'], true) ?: [];
         } else {
-            error_log("Simple query succeeded with " . count($services) . " results");
+            $service['images'] = [];
         }
-    } elseif (is_array($services) && count($services) > 0) {
-        error_log("First service: " . json_encode($services[0]));
-    } else {
-        error_log("No services returned from query");
-    }
-
-    // الحصول على العدد الإجمالي
-    $countQuery = "
-        SELECT COUNT(*) as total
-        FROM services s
-    ";
-    
-    // إضافة شروط WHERE إذا كانت موجودة
-    if (!empty($whereConditions)) {
-        $countQuery .= " WHERE " . implode(' AND ', $whereConditions);
     }
     
-    $totalResult = $database->selectOne($countQuery);
-    
-    // فحص النتيجة
-    if ($totalResult && isset($totalResult['total'])) {
-        $total = $totalResult['total'];
-    } else {
-        $total = 0;
-        error_log("Count query failed or returned invalid result: " . json_encode($totalResult));
-    }
-
-    // معالجة البيانات - مبسطة
-    if (is_array($services)) {
-        foreach ($services as &$service) {
-            // تحويل الأرقام الأساسية فقط
-            $service['id'] = (int)($service['id'] ?? 0);
-            $service['price'] = (float)($service['price'] ?? 0);
-            $service['category_id'] = (int)($service['category_id'] ?? 0);
-            $service['provider_id'] = (int)($service['provider_id'] ?? 0);
-            
-            // تحويل القيم المنطقية
-            $service['is_active'] = (bool)($service['is_active'] ?? false);
-            $service['is_verified'] = (bool)($service['is_verified'] ?? false);
-            
-            // تحويل JSON strings إلى arrays
-            $service['images'] = json_decode($service['images'] ?? '[]', true) ?: [];
-            $service['specifications'] = json_decode($service['specifications'] ?? '[]', true) ?: [];
-            $service['tags'] = json_decode($service['tags'] ?? '[]', true) ?: [];
-            $service['payment_terms'] = json_decode($service['payment_terms'] ?? '[]', true) ?: [];
-            $service['availability'] = json_decode($service['availability'] ?? '[]', true) ?: [];
-            
-            // التأكد من وجود النصوص الأساسية
-            $service['title'] = $service['title'] ?? '';
-            $service['description'] = $service['description'] ?? '';
-            $service['category_name'] = $service['category_name'] ?? '';
-            $service['provider_name'] = $service['provider_name'] ?? '';
-        }
-    } else {
-        $services = [];
-    }
-
-    $response = [
+    echo json_encode([
         'success' => true,
-        'message' => 'تم جلب الخدمات بنجاح',
-        'timestamp' => date('Y-m-d H:i:s'),
-        'data' => [
-            'services' => $services,
-            'pagination' => [
-                'current_page' => $page,
-                'total_pages' => ceil($total / $limit),
-                'total_items' => (int)$total,
-                'items_per_page' => $limit
-            ]
-        ]
-    ];
-
-    // إرسال الاستجابة
-    header('Content-Type: application/json; charset=utf-8');
-    echo json_encode($response, JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE);
-    exit; // إيقاف التنفيذ بعد إرسال JSON
-
+        'data' => $services,
+        'count' => count($services),
+        'timestamp' => date('Y-m-d H:i:s')
+    ], JSON_UNESCAPED_UNICODE);
+    
+} catch (PDOException $e) {
+    http_response_code(500);
+    echo json_encode([
+        'success' => false,
+        'message' => 'خطأ في قاعدة البيانات: ' . $e->getMessage(),
+        'timestamp' => date('Y-m-d H:i:s')
+    ], JSON_UNESCAPED_UNICODE);
 } catch (Exception $e) {
-    logError("Get services error: " . $e->getMessage());
-    errorResponse('حدث خطأ أثناء جلب الخدمات', 500);
+    http_response_code(500);
+    echo json_encode([
+        'success' => false,
+        'message' => 'خطأ في الخادم: ' . $e->getMessage(),
+        'timestamp' => date('Y-m-d H:i:s')
+    ], JSON_UNESCAPED_UNICODE);
 }
-
 ?>
 

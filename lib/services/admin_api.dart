@@ -1,141 +1,127 @@
 import 'dart:convert';
 import 'package:http/http.dart' as http;
+import '../config/config.dart';
 
 class AdminApi {
-  // static const String baseUrl = 'http://192.168.1.3/asha_app_backend';
-  // static const String baseUrl = 'http://localhost/asha_app_backend';
-  static const String baseUrl = 'http://127.0.0.1/asha_app_tag';
+  static const String baseUrl = Config.apiBaseUrl;
 
-  // ✅ تسجيل دخول المشرف
-  static Future<bool> loginAdmin(String username, String password) async {
-    final response = await http.post(
-      Uri.parse('$baseUrl/api/auth/admin_login.php'),
-      body: {'username': username, 'password': password},
-    );
-    final data = jsonDecode(response.body);
-    return data['success'] == true;
+  // Headers للطلبات
+  static Map<String, String> get _headers => {
+    'Content-Type': 'application/json',
+    'Accept': 'application/json',
+  };
+
+  // دالة مساعدة للطلبات
+  static Future<Map<String, dynamic>> _makeRequest(
+    String endpoint, {
+    Map<String, dynamic>? body,
+    Map<String, String>? queryParams,
+    String method = 'GET',
+  }) async {
+    try {
+      final uri = Uri.parse('$baseUrl$endpoint').replace(queryParameters: queryParams);
+
+      http.Response response;
+
+      switch (method.toUpperCase()) {
+        case 'GET':
+          response = await http.get(uri, headers: _headers);
+          break;
+        case 'POST':
+          response = await http.post(
+            uri,
+            headers: _headers,
+            body: jsonEncode(body),
+          );
+          break;
+        case 'PUT':
+          response = await http.put(
+            uri,
+            headers: _headers,
+            body: jsonEncode(body),
+          );
+          break;
+        case 'DELETE':
+          response = await http.delete(uri, headers: _headers);
+          break;
+        default:
+          throw Exception('Method not supported');
+      }
+
+      // التحقق من نوع المحتوى
+      if (response.headers['content-type']?.contains('application/json') == true) {
+        final data = jsonDecode(response.body);
+        
+        if (response.statusCode >= 200 && response.statusCode < 300) {
+          return data;
+        } else {
+          throw Exception(data['message'] ?? 'حدث خطأ في الطلب');
+        }
+      } else {
+        // إذا لم يكن JSON، قد يكون خطأ في الخادم
+        print('Server response: ${response.body}');
+        throw Exception('الخادم لا يعيد بيانات JSON صحيحة');
+      }
+    } catch (e) {
+      if (e.toString().contains('FormatException')) {
+        throw Exception('خطأ في تنسيق البيانات من الخادم - تأكد من أن الخادم يعمل بشكل صحيح');
+      }
+      throw Exception('خطأ في الاتصال: $e');
+    }
   }
 
-  // ✅ جلب جميع الخدمات
-  static Future<List<dynamic>> getAllServices() async {
-    final response = await http.get(
-      Uri.parse('$baseUrl/api/admin/get_all_services.php'),
-    );
-    final data = jsonDecode(response.body);
-    return data['success'] == true ? data['data'] : [];
-  }
-
-  // ✅ حذف خدمة
-  static Future<bool> deleteService(int id) async {
-    final response = await http.post(
-      Uri.parse('$baseUrl/api/admin/delete_service.php'),
-      body: {'id': '$id'},
-    );
-    final data = jsonDecode(response.body);
-    return data['success'] == true;
-  }
-
-  // ✅ جلب التعليقات
-  static Future<List<dynamic>> getAllComments() async {
-    final response = await http.get(
-      Uri.parse('$baseUrl/api/admin/get_all_comments.php'),
-    );
-    final data = jsonDecode(response.body);
-    return data['success'] == true ? data['data'] : [];
-  }
-
-  // ✅ حذف تعليق
-  static Future<bool> deleteComment(int id) async {
-    final response = await http.post(
-      Uri.parse('$baseUrl/api/admin/delete_comment.php'),
-      body: {'id': '$id'},
-    );
-    final data = jsonDecode(response.body);
-    return data['success'] == true;
-  }
-
-  // ✅ جلب جميع الحجوزات مع الإحصائيات
+  // جلب جميع الحجوزات مع الإحصائيات
   static Future<Map<String, dynamic>> getAllBookingsWithStats({
     String? status,
   }) async {
-    String url = '$baseUrl/api/admin/get_all_bookings.php';
-    if (status != null && status != 'الكل') {
-      url += '?status=$status';
+    try {
+      Map<String, String> queryParams = {};
+      if (status != null) queryParams['status'] = status;
+
+      return await _makeRequest(
+        '/api/admin/bookings/get_all_with_stats.php',
+        queryParams: queryParams,
+      );
+    } catch (e) {
+      print('Error getting bookings: $e');
+      return {
+        'success': false,
+        'data': [],
+        'message': 'غير متوفر حالياً'
+      };
     }
-
-    final response = await http.get(Uri.parse(url));
-    final data = jsonDecode(response.body);
-    return data['success'] == true
-        ? data
-        : {'success': false, 'data': [], 'stats': {}};
   }
 
-  // ✅ جلب جميع الإعلانات مع الإحصائيات
-  static Future<Map<String, dynamic>> getAllAdsWithStats() async {
-    final response = await http.get(
-      Uri.parse('$baseUrl/api/admin/get_all_ads.php'),
-    );
-    final data = jsonDecode(response.body);
-    return data['success'] == true
-        ? data
-        : {'success': false, 'data': [], 'stats': {}};
+  // تحديث حالة الحجز
+  static Future<bool> updateBookingStatus(int bookingId, String newStatus) async {
+    try {
+      final response = await _makeRequest(
+        '/api/admin/bookings/update_status.php',
+        method: 'POST',
+        body: {
+          'booking_id': bookingId,
+          'status': newStatus,
+        },
+      );
+      return response['success'] == true;
+    } catch (e) {
+      print('Error updating booking status: $e');
+      return false;
+    }
   }
 
-  // ✅ حذف إعلان مع إشعار المزود
-  static Future<Map<String, dynamic>> deleteAdWithNotification(
-    int adId,
-    String reason,
-  ) async {
-    final response = await http.post(
-      Uri.parse('$baseUrl/api/admin/delete_ad.php'),
-      headers: {'Content-Type': 'application/json'},
-      body: json.encode({'ad_id': adId, 'reason': reason}),
-    );
-    final data = jsonDecode(response.body);
-    return data;
-  }
-
-  // ✅ تحديث حالة الحجز
-  static Future<bool> updateBookingStatus(
-    int bookingId,
-    String newStatus,
-  ) async {
-    final response = await http.post(
-      Uri.parse('$baseUrl/api/bookings/update_booking_status.php'),
-      headers: {'Content-Type': 'application/json'},
-      body: json.encode({'booking_id': bookingId, 'status': newStatus}),
-    );
-    final data = jsonDecode(response.body);
-    return data['success'] == true;
-  }
-
-  // ✅ حذف حجز
+  // حذف الحجز
   static Future<bool> deleteBooking(int bookingId) async {
-    final response = await http.post(
-      Uri.parse('$baseUrl/api/bookings/delete_booking.php'),
-      headers: {'Content-Type': 'application/json'},
-      body: json.encode({'booking_id': bookingId}),
-    );
-    final data = jsonDecode(response.body);
-    return data['success'] == true;
+    try {
+      final response = await _makeRequest(
+        '/api/admin/bookings/delete.php',
+        method: 'DELETE',
+        body: {'booking_id': bookingId},
+      );
+      return response['success'] == true;
+    } catch (e) {
+      print('Error deleting booking: $e');
+      return false;
+    }
   }
-
-  // ✅ جلب طلبات الانضمام
-  static Future<List<dynamic>> getJoinRequests() async {
-    final response = await http.get(
-      Uri.parse('$baseUrl/api/admin/get_provider_requests.php'),
-    );
-    final data = jsonDecode(response.body);
-    return data;
-  }
-
-  // ✅ قبول طلب انضمام مزود خدمة
-  static Future<bool> approveProvider(int id) async {
-    final response = await http.post(
-      Uri.parse('$baseUrl/api/admin/manage_provider_requests.php'),
-      body: {'id': '$id', 'action': 'approve'},
-    );
-    final data = jsonDecode(response.body);
-    return data['success'] == true;
-  }
-}
+} 

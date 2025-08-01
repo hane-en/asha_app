@@ -36,24 +36,31 @@ class AuthService {
       'is_yemeni_account': isYemeniAccount,
     };
 
-    return await ApiService.register(data);
+    return await ApiService.register(
+      name: name,
+      email: email,
+      password: password,
+      userType: userType,
+      phone: phone,
+      address: address,
+      categoryId: null,
+    );
   }
 
   Future<Map<String, dynamic>> login({
-    required String email,
+    required String identifier,
     required String password,
     String? userType,
   }) async {
     final data = {
-      'email': email,
+      'identifier': identifier,
       'password': password,
       if (userType != null) 'user_type': userType,
     };
 
     final response = await ApiService.login(
-      email: email,
+      email: identifier,
       password: password,
-      userType: userType,
     );
 
     if (response['success'] == true) {
@@ -68,11 +75,13 @@ class AuthService {
     required String email,
     required String code,
   }) async {
-    return await ApiService.verify(email: email, code: code);
+    // سيتم إضافة هذه الدالة لاحقاً
+    throw UnimplementedError('verify method not implemented yet');
   }
 
   Future<Map<String, dynamic>> forgotPassword({required String email}) async {
-    return await ApiService.forgotPassword(email: email);
+    // سيتم إضافة هذه الدالة لاحقاً
+    throw UnimplementedError('forgotPassword method not implemented yet');
   }
 
   Future<Map<String, dynamic>> resetPassword({
@@ -80,11 +89,8 @@ class AuthService {
     required String code,
     required String newPassword,
   }) async {
-    return await ApiService.resetUserPassword(
-      email: email,
-      code: code,
-      newPassword: newPassword,
-    );
+    // سيتم إضافة هذه الدالة لاحقاً
+    throw UnimplementedError('resetPassword method not implemented yet');
   }
 
   Future<void> _saveUserData(

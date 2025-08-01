@@ -14,14 +14,14 @@ class ProviderLoginPage extends StatefulWidget {
 
 class _ProviderLoginPageState extends State<ProviderLoginPage> {
   final _formKey = GlobalKey<FormState>();
-  final loginController = TextEditingController();
+  final identifierController = TextEditingController(); // تغيير من loginController
   final passwordController = TextEditingController();
   bool isPasswordVisible = false;
   bool isLoading = false;
 
   @override
   void dispose() {
-    loginController.dispose();
+    identifierController.dispose(); // تغيير من loginController
     passwordController.dispose();
     super.dispose();
   }
@@ -34,7 +34,7 @@ class _ProviderLoginPageState extends State<ProviderLoginPage> {
     try {
       final authService = AuthService();
       final data = await authService.login(
-        email: loginController.text.trim(),
+        identifier: identifierController.text.trim(),
         password: passwordController.text,
         userType: 'provider',
       );
@@ -138,7 +138,7 @@ class _ProviderLoginPageState extends State<ProviderLoginPage> {
 
                         // البريد الإلكتروني أو رقم الهاتف
                         TextFormField(
-                          controller: loginController,
+                          controller: identifierController,
                           keyboardType: TextInputType.text,
                           decoration: InputDecoration(
                             labelText: 'البريد الإلكتروني أو رقم الهاتف',

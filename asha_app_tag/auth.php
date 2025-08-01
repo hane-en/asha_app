@@ -54,10 +54,30 @@ class Auth {
     /**
      * تسجيل الدخول
      */
-    public function login($email, $password, $userType = null) {
-        // البحث عن المستخدم
-        $whereClause = 'email = :email AND is_active = 1';
-        $params = ['email' => $email];
+    public function login($identifier, $password, $userType = null) {
+        // تحديد نوع المعرف (بريد إلكتروني أو رقم هاتف)
+        $isEmail = filter_var($identifier, FILTER_VALIDATE_EMAIL);
+        $isPhone = preg_match('/^[0-9+\-\s()]+$/', $identifier);
+        
+        // إذا لم يكن بريد إلكتروني، اعتبره رقم هاتف
+        if (!$isEmail) {
+            $isPhone = true;
+        }
+        
+        if (!$isEmail && !$isPhone) {
+            errorResponse('يرجى إدخال بريد إلكتروني صحيح أو رقم هاتف صحيح');
+        }
+        
+        // بناء الاستعلام حسب نوع المعرف
+        if ($isEmail) {
+            $whereClause = 'email = :identifier AND is_active = 1';
+            $params = ['identifier' => $identifier];
+        } else {
+            // تنظيف رقم الهاتف من الأحرف غير الرقمية
+            $cleanPhone = preg_replace('/[^0-9]/', '', $identifier);
+            $whereClause = 'phone = :phone AND is_active = 1';
+            $params = ['phone' => $cleanPhone];
+        }
         
         if ($userType) {
             $whereClause .= ' AND user_type = :user_type';

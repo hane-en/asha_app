@@ -1,5 +1,10 @@
 import 'package:flutter/material.dart';
 
+// الألوان الرئيسية
+const Color primaryColor = Color(0xFF8e24aa);
+const Color secondaryColor = Color(0xFFE1BEE7);
+const Color accentColor = Color(0xFF4A148C);
+
 final ThemeData lightTheme = ThemeData(
   primarySwatch: Colors.purple,
   primaryColor: const Color(0xFF8e24aa),

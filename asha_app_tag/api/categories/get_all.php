@@ -1,73 +1,66 @@
 <?php
-/**
- * API endpoint لجلب جميع الفئات
- * GET /api/categories/get_all.php
- */
-
-require_once '../../config.php';
-require_once '../../database.php';
-
-// إعداد CORS
-header('Access-Control-Allow-Origin: *');
-header('Access-Control-Allow-Methods: GET, OPTIONS');
-header('Access-Control-Allow-Headers: Content-Type, Authorization, X-Requested-With');
 header('Content-Type: application/json; charset=utf-8');
+header('Access-Control-Allow-Origin: *');
+header('Access-Control-Allow-Methods: GET, POST, OPTIONS');
+header('Access-Control-Allow-Headers: Content-Type, Authorization');
 
-// معالجة preflight requests
-if ($_SERVER['REQUEST_METHOD'] === 'OPTIONS') {
+// التعامل مع طلبات OPTIONS
+if (isset($_SERVER['REQUEST_METHOD']) && $_SERVER['REQUEST_METHOD'] === 'OPTIONS') {
     http_response_code(200);
     exit();
 }
 
-// التحقق من طريقة الطلب
-if ($_SERVER['REQUEST_METHOD'] !== 'GET') {
-    errorResponse('طريقة الطلب غير مدعومة', 405);
-}
-
-// الحصول على المعاملات
-$include_services_count = isset($_GET['include_services_count']) ? (bool)$_GET['include_services_count'] : false;
+require_once '../config.php';
+require_once '../database.php';
 
 try {
     $database = new Database();
-    $database->connect();
-
-    if ($include_services_count) {
-        // الاستعلام مع عدد الخدمات
-        $query = "
-            SELECT 
-                c.*,
-                COUNT(s.id) as services_count
+    $conn = $database->connect();
+    
+    if (!$conn) {
+        throw new Exception('فشل في الاتصال بقاعدة البيانات');
+    }
+    
+    $sql = "SELECT 
+                c.id,
+                c.name,
+                c.description,
+                c.image,
+                c.is_active,
+                c.created_at,
+                COUNT(s.id) as services_count,
+                AVG(s.rating) as avg_rating,
+                COUNT(DISTINCT s.provider_id) as providers_count
             FROM categories c
-            LEFT JOIN services s ON c.id = s.category_id AND s.is_active = 1 AND s.is_verified = 1
+            LEFT JOIN services s ON c.id = s.category_id AND s.is_active = 1
             WHERE c.is_active = 1
             GROUP BY c.id
-            ORDER BY c.created_at ASC
-        ";
-    } else {
-        // الاستعلام البسيط
-        $query = "
-            SELECT * FROM categories 
-            WHERE is_active = 1 
-            ORDER BY created_at ASC
-        ";
+            ORDER BY c.name ASC";
+    
+    error_log("Categories API: Executing query: $sql");
+    
+    $categories = $database->select($sql);
+    
+    if ($categories === false) {
+        throw new Exception('خطأ في جلب الفئات من قاعدة البيانات');
     }
-
-    $categories = $database->select($query);
-
-    // معالجة البيانات
+    
+    error_log("Categories API: Found " . count($categories) . " categories");
+    
+    // تحويل البيانات
     foreach ($categories as &$category) {
+        $category['services_count'] = (int)$category['services_count'];
+        $category['providers_count'] = (int)$category['providers_count'];
+        $category['avg_rating'] = $category['avg_rating'] ? (float)round($category['avg_rating'], 1) : 0.0;
         $category['is_active'] = (bool)$category['is_active'];
-        if (isset($category['services_count'])) {
-            $category['services_count'] = (int)$category['services_count'];
-        }
     }
-
+    
     successResponse($categories, 'تم جلب الفئات بنجاح');
-
+    
 } catch (Exception $e) {
+    error_log("Categories API Error: " . $e->getMessage());
     logError("Get categories error: " . $e->getMessage());
-    errorResponse('حدث خطأ أثناء جلب الفئات', 500);
+    errorResponse('خطأ في قاعدة البيانات: ' . $e->getMessage(), 500);
 }
-
 ?>
 

@@ -2,8 +2,14 @@ import 'package:flutter/material.dart';
 import '../../services/services_service.dart';
 import '../../models/service_model.dart';
 import '../../widgets/service_card.dart';
+import '../../routes/route_names.dart';
 
 class ServicesScreen extends StatefulWidget {
+  final int? categoryId;
+  final String? categoryName;
+
+  const ServicesScreen({super.key, this.categoryId, this.categoryName});
+
   @override
   _ServicesScreenState createState() => _ServicesScreenState();
 }
@@ -29,10 +35,22 @@ class _ServicesScreenState extends State<ServicesScreen> {
     }
 
     try {
-      final response = await _servicesService.getAllServices(
-        page: _currentPage,
-        limit: 20,
-      );
+      Map<String, dynamic> response;
+
+      if (widget.categoryId != null) {
+        // جلب الخدمات الخاصة بالفئة المحددة فقط
+        response = await _servicesService.getServicesByCategory(
+          widget.categoryId!,
+          page: _currentPage,
+          limit: 20,
+        );
+      } else {
+        // جلب جميع الخدمات (للتوافق مع الكود القديم)
+        response = await _servicesService.getAllServices(
+          page: _currentPage,
+          limit: 20,
+        );
+      }
 
       if (response['success'] == true) {
         final data = response['data'];
@@ -53,6 +71,11 @@ class _ServicesScreenState extends State<ServicesScreen> {
           _currentPage++;
           _isLoading = false;
         });
+      } else {
+        setState(() {
+          _isLoading = false;
+        });
+        _showError(response['message'] ?? 'فشل في تحميل الخدمات');
       }
     } catch (e) {
       setState(() {
@@ -71,28 +94,83 @@ class _ServicesScreenState extends State<ServicesScreen> {
   @override
   Widget build(BuildContext context) {
     if (_isLoading && _services.isEmpty) {
-      return Scaffold(body: Center(child: CircularProgressIndicator()));
+      return Scaffold(
+        appBar: AppBar(
+          title: Text(widget.categoryName ?? 'الخدمات'),
+          backgroundColor: Colors.purple,
+          foregroundColor: Colors.white,
+        ),
+        body: const Center(child: CircularProgressIndicator()),
+      );
     }
 
     return Scaffold(
-      appBar: AppBar(title: Text('الخدمات')),
+      appBar: AppBar(
+        title: Text(widget.categoryName ?? 'الخدمات'),
+        backgroundColor: Colors.purple,
+        foregroundColor: Colors.white,
+      ),
       body: RefreshIndicator(
         onRefresh: () => _loadServices(refresh: true),
-        child: ListView.builder(
-          itemCount: _services.length + (_hasMore ? 1 : 0),
-          itemBuilder: (context, index) {
-            if (index == _services.length) {
-              if (_hasMore) {
-                _loadServices();
-                return Center(child: CircularProgressIndicator());
-              }
-              return SizedBox.shrink();
-            }
+        child: _services.isEmpty && !_isLoading
+            ? Center(
+                child: Column(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    Icon(Icons.search_off, size: 80, color: Colors.grey[400]),
+                    const SizedBox(height: 16),
+                    Text(
+                      'لا توجد خدمات متاحة',
+                      style: TextStyle(
+                        fontSize: 18,
+                        color: Colors.grey[600],
+                        fontWeight: FontWeight.w500,
+                      ),
+                    ),
+                    const SizedBox(height: 8),
+                    Text(
+                      widget.categoryId != null
+                          ? 'لا توجد خدمات في هذه الفئة حالياً'
+                          : 'لا توجد خدمات متاحة حالياً',
+                      style: TextStyle(fontSize: 14, color: Colors.grey[500]),
+                    ),
+                  ],
+                ),
+              )
+            : ListView.builder(
+                padding: const EdgeInsets.all(16),
+                itemCount: _services.length + (_hasMore ? 1 : 0),
+                itemBuilder: (context, index) {
+                  if (index == _services.length) {
+                    if (_hasMore) {
+                      _loadServices();
+                      return const Padding(
+                        padding: EdgeInsets.all(16),
+                        child: Center(child: CircularProgressIndicator()),
+                      );
+                    }
+                    return const SizedBox.shrink();
+                  }
 
-            final service = _services[index];
-            return ServiceCard(service: service);
-          },
-        ),
+                  final service = _services[index];
+                  return Padding(
+                    padding: const EdgeInsets.only(bottom: 16),
+                    child: ServiceCard(
+                      service: service,
+                      onTap: () {
+                        Navigator.pushNamed(
+                          context,
+                          RouteNames.serviceProviders,
+                          arguments: {
+                            'service_id': service.id,
+                            'service_name': service.title,
+                          },
+                        );
+                      },
+                    ),
+                  );
+                },
+              ),
       ),
     );
   }

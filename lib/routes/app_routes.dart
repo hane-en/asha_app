@@ -18,11 +18,17 @@ import '../screens/admin/search_user_page.dart';
 import '../screens/admin/user_details_page.dart';
 import '../screens/admin/user_list_page.dart';
 import '../screens/auth/forgot_password_page.dart';
-import '../screens/auth/login_admin.dart';
-import '../screens/auth/login_page.dart';
+import '../screens/auth/login_admin.dart' as admin;
+import '../screens/auth/login_screen.dart';
 import '../screens/auth/provider_login.dart';
-import '../screens/auth/signup_page.dart';
 import '../screens/auth/verify_page.dart';
+import '../screens/auth/register_screen.dart';
+import '../screens/auth/booking_screen.dart';
+import '../screens/user/service_details_screen.dart';
+import '../screens/user/providers_by_category_screen.dart';
+import '../screens/user/provider_services_screen.dart';
+import '../screens/user/service_providers_screen.dart';
+import '../screens/user/offer_details_screen.dart';
 import '../screens/provider/add_service_page.dart';
 import '../screens/provider/add_service_category_page.dart';
 import '../screens/provider/edit_service_category_page.dart';
@@ -36,6 +42,7 @@ import '../screens/provider/provider_home_page.dart';
 import '../screens/provider/provider_pending_page.dart';
 import '../screens/provider/send_massage_page.dart';
 import '../screens/provider/settings_page.dart';
+import '../screens/services/services_screen.dart';
 import '../screens/user/booking_status_page.dart';
 import '../screens/user/favorites_page.dart';
 import '../screens/user/home_page.dart';
@@ -46,21 +53,18 @@ import '../screens/user/user_help_page.dart';
 import '../screens/user/user_home_page.dart';
 import '../screens/provider/provider_help_page.dart';
 import '../screens/provider/edit_provider_profile_page.dart';
-import '../test_services_connection.dart';
-import '../test_connection.dart';
-import '../test_services_home_method.dart';
-import '../test_backend_connection.dart';
-import '../test_unified_data.dart';
-import '../test_services_simple.dart';
-import '../test_api_simple.dart';
-import '../screens/user/test_favorites_debug.dart';
-import '../screens/user/test_local_favorites.dart';
+import '../screens/user/test_flow_screen.dart';
+import '../screens/test_api_page.dart';
+import '../screens/database_test_page.dart';
 import 'route_arguments.dart';
 import 'route_names.dart';
 
 class AppRoutes {
   // Route names - using centralized route names
   static const String login = RouteNames.login;
+
+  static const String booking = RouteNames.booking;
+
   static const String signup = RouteNames.signup;
   static const String verify = RouteNames.verify;
   static const String forgotPassword = RouteNames.forgotPassword;
@@ -83,6 +87,7 @@ class AppRoutes {
   static const String userSettings = RouteNames.userSettings;
   static const String help = RouteNames.help;
   static const String serviceSearch = RouteNames.serviceSearch;
+  static const String categoryServices = RouteNames.categoryServices;
   static const String providerAnalytics = RouteNames.providerAnalytics;
   static const String providerSettings = RouteNames.providerSettings;
   static const String splash = RouteNames.splash;
@@ -100,6 +105,21 @@ class AppRoutes {
   static const String deleteUser = RouteNames.deleteUser;
   static const String searchUser = RouteNames.searchUser;
   static const String providerHelp = RouteNames.providerHelp;
+  static const String providersByCategory = RouteNames.providersByCategory;
+  static const String serviceProviders = RouteNames.serviceProviders;
+  static const String providerServices = RouteNames.providerServices;
+  static const String serviceDetails = RouteNames.serviceDetails;
+  static const String offerDetails = RouteNames.offerDetails;
+  static const String addServiceCategory = RouteNames.addServiceCategory;
+  static const String editServiceCategory = RouteNames.editServiceCategory;
+  static const String serviceCategoryDetails =
+      RouteNames.serviceCategoryDetails;
+  static const String editProviderProfile = RouteNames.editProviderProfile;
+  static const String providerNotifications = RouteNames.providerNotifications;
+  static const String profileRequests = RouteNames.profileRequests;
+  static const String testFlow = RouteNames.testFlow;
+  static const String testApi = RouteNames.testApi;
+  static const String databaseTest = RouteNames.databaseTest;
 
   /// Route generator with improved type safety and error handling
   static Route<dynamic> generateRoute(RouteSettings settings) {
@@ -107,12 +127,12 @@ class AppRoutes {
       switch (settings.name) {
         case login:
           return MaterialPageRoute(
-            builder: (_) => const LoginPage(),
+            builder: (_) => LoginScreen(),
             settings: settings,
           );
         case signup:
           return MaterialPageRoute(
-            builder: (_) => const SignupPage(),
+            builder: (_) => RegisterScreen(),
             settings: settings,
           );
         case verify:
@@ -132,7 +152,7 @@ class AppRoutes {
           );
         case adminLogin:
           return MaterialPageRoute(
-            builder: (_) => LoginScreen(),
+            builder: (_) => admin.LoginScreen(),
             settings: settings,
           );
         case userHome:
@@ -141,13 +161,15 @@ class AppRoutes {
             settings: settings,
           );
         case favorites:
+          final args = settings.arguments as Map<String, dynamic>?;
           return MaterialPageRoute(
-            builder: (_) => FavoritesPage(),
+            builder: (_) => FavoritesPage(userId: args?['userId'] ?? 0),
             settings: settings,
           );
         case bookingStatus:
+          final args = settings.arguments as Map<String, dynamic>?;
           return MaterialPageRoute(
-            builder: (_) => const BookingStatusPage(),
+            builder: (_) => BookingStatusPage(userId: args?['userId'] ?? 0),
             settings: settings,
           );
         case providerHome:
@@ -184,6 +206,42 @@ class AppRoutes {
             builder: (_) => ServiceCategoryDetailsPage(
               categoryId: args?['categoryId'] ?? 0,
               serviceTitle: args?['serviceTitle'] ?? '',
+            ),
+            settings: settings,
+          );
+        case categoryServices:
+          final args = settings.arguments as Map<String, dynamic>?;
+          return MaterialPageRoute(
+            builder: (_) => ServicesScreen(
+              categoryId: args?['categoryId'],
+              categoryName: args?['categoryName'],
+            ),
+            settings: settings,
+          );
+        case RouteNames.providersByCategory:
+          final args = settings.arguments as Map<String, dynamic>?;
+          return MaterialPageRoute(
+            builder: (_) => ProvidersByCategoryScreen(
+              categoryId: args?['categoryId'] ?? 0,
+              categoryName: args?['categoryName'] ?? '',
+            ),
+            settings: settings,
+          );
+        case RouteNames.providerServices:
+          final args = settings.arguments as Map<String, dynamic>?;
+          return MaterialPageRoute(
+            builder: (_) => ProviderServicesScreen(
+              providerId: args?['provider_id'] ?? 0,
+              providerName: args?['provider_name'] ?? '',
+            ),
+            settings: settings,
+          );
+        case RouteNames.serviceDetails:
+          final args = settings.arguments as Map<String, dynamic>?;
+          return MaterialPageRoute(
+            builder: (_) => ServiceDetailsScreen(
+              serviceId: args?['service_id'] ?? 0,
+              serviceName: args?['service_name'],
             ),
             settings: settings,
           );
@@ -347,53 +405,66 @@ class AppRoutes {
             builder: (_) => const ProviderHelpPage(),
             settings: settings,
           );
+        case RouteNames.testFlow:
+          return MaterialPageRoute(
+            builder: (_) => const TestFlowScreen(),
+            settings: settings,
+          );
+        case RouteNames.testApi:
+          return MaterialPageRoute(
+            builder: (_) => const TestApiPage(),
+            settings: settings,
+          );
+        case RouteNames.databaseTest:
+          return MaterialPageRoute(
+            builder: (_) => const DatabaseTestPage(),
+            settings: settings,
+          );
         case RouteNames.editProviderProfile:
           return MaterialPageRoute(
             builder: (_) => const EditProviderProfilePage(),
             settings: settings,
           );
-        case '/provider-notifications':
+        case RouteNames.booking:
+          final args = settings.arguments as Map<String, dynamic>?;
+          // بيانات تجريبية للخدمة إذا لم يتم تمرير بيانات
+          final serviceData =
+              args ??
+              {
+                'id': 1,
+                'title': 'خدمة تجريبية',
+                'price': 100.0,
+                'provider_name': 'مزود تجريبي',
+                'description': 'وصف الخدمة التجريبية',
+              };
+          return MaterialPageRoute(
+            builder: (_) => BookingScreen(serviceData: serviceData),
+            settings: settings,
+          );
+
+        case RouteNames.providerNotifications:
           return MaterialPageRoute(
             builder: (_) => const ProviderNotificationsPage(),
             settings: settings,
           );
-        case '/test-services':
+        case RouteNames.serviceProviders:
+          final args = settings.arguments as Map<String, dynamic>?;
           return MaterialPageRoute(
-            builder: (_) => TestServicesConnection(),
+            builder: (_) => ServiceProvidersScreen(
+              serviceId: args?['service_id'] ?? 0,
+              serviceName: args?['service_name'] ?? '',
+            ),
             settings: settings,
           );
-        case '/test-connection':
+        case RouteNames.offerDetails:
+          final args = settings.arguments as Map<String, dynamic>?;
           return MaterialPageRoute(
-            builder: (_) => TestConnection(),
+            builder: (_) => OfferDetailsScreen(
+              offerId: args?['offer_id'] ?? 0,
+              offerTitle: args?['offer_title'],
+            ),
             settings: settings,
           );
-        case '/test-services-home':
-          return MaterialPageRoute(
-            builder: (_) => TestServicesHomeMethod(),
-            settings: settings,
-          );
-        case '/test-backend':
-          return MaterialPageRoute(
-            builder: (_) => TestBackendConnection(),
-            settings: settings,
-          );
-        case '/test-unified':
-          return MaterialPageRoute(
-            builder: (_) => TestUnifiedData(),
-            settings: settings,
-          );
-        case '/test-services-simple':
-          return MaterialPageRoute(
-            builder: (_) => TestServicesSimple(),
-            settings: settings,
-          );
-        case '/test-api-simple':
-          return MaterialPageRoute(
-            builder: (_) => TestApiSimple(),
-            settings: settings,
-          );
-        case '/test-favorites':
-          return MaterialPageRoute(builder: (_) => const TestFavoritesDebug());
         default:
           return MaterialPageRoute(
             builder: (_) => const _NotFoundPage(),

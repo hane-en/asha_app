@@ -1,13 +1,13 @@
 import 'package:flutter/material.dart';
-import 'package:asha_application/models/service_model.dart';
-import 'package:asha_application/services/api_service.dart';
-import 'package:asha_application/routes/app_routes.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import '../../services/api_service.dart';
+// import 'booking_page.dart'; // سيتم إضافة هذا الملف لاحقاً
+import '../../models/service_model.dart';
+import '../auth/booking_screen.dart';
 
 class DetailsPage extends StatefulWidget {
+  const DetailsPage({super.key, required this.service});
   final Map<String, dynamic> service;
-
-  const DetailsPage({Key? key, required this.service}) : super(key: key);
 
   @override
   State<DetailsPage> createState() => _DetailsPageState();
@@ -26,40 +26,56 @@ class _DetailsPageState extends State<DetailsPage> {
   Future<void> _checkFavoriteStatus() async {
     final prefs = await SharedPreferences.getInstance();
     final userId = prefs.getInt('user_id');
-
     if (userId != null) {
-      // المستخدم مسجل دخول - فحص من API
       try {
-        final favorites = await ApiService.getFavorites(userId);
-        setState(() {
-          _isFavorite = favorites.any((f) => f['id'] == widget.service['id']);
-        });
+        try {
+          final favorites = await ApiService.getUserFavorites(userId);
+          if (favorites['success'] && favorites['data'] != null) {
+            final data = favorites['data'] as List;
+            setState(() {
+              _isFavorite = data.any(
+                (fav) => fav['id'] == widget.service['id'],
+              );
+            });
+          }
+        } catch (e) {
+          print('Error checking favorite status: $e');
+          // في حالة الخطأ، نفترض أن الخدمة ليست في المفضلة
+          setState(() {
+            _isFavorite = false;
+          });
+        }
       } catch (e) {
         print('Error checking favorite status: $e');
       }
-    } else {
-      // المستخدم غير مسجل دخول - فحص من التخزين المحلي
-      final localFavorites = prefs.getStringList('local_favorites') ?? [];
-      setState(() {
-        _isFavorite = localFavorites.contains(widget.service['id'].toString());
-      });
     }
   }
 
   Future<void> _toggleFavorite() async {
     setState(() => _isLoading = true);
+
     try {
       final prefs = await SharedPreferences.getInstance();
       final userId = prefs.getInt('user_id');
 
       if (userId != null) {
-        // المستخدم مسجل دخول - استخدام API
-        if (_isFavorite) {
-          await ApiService.removeFavorite(userId, widget.service['id']);
-        } else {
-          await ApiService.addToFavorites(userId, widget.service['id']);
+        // المستخدم مسجل دخول
+        try {
+          await ApiService.toggleFavorite(
+            userId: userId,
+            serviceId: widget.service['id'],
+          );
+        } catch (e) {
+          print('Error toggling favorite: $e');
+          // في حالة الخطأ، نعرض رسالة للمستخدم
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text('حدث خطأ في تحديث المفضلة: $e'),
+              backgroundColor: Colors.red,
+            ),
+          );
+          return; // لا نغير حالة المفضلة في حالة الخطأ
         }
-
         setState(() => _isFavorite = !_isFavorite);
 
         ScaffoldMessenger.of(context).showSnackBar(
@@ -113,7 +129,7 @@ class _DetailsPageState extends State<DetailsPage> {
         id: widget.service['id'] ?? 0,
         providerId: widget.service['provider_id'] ?? 0,
         categoryId: widget.service['category_id'] ?? 0,
-        title: widget.service['title'] ?? '',
+        title: widget.service['name'] ?? '',
         description: widget.service['description'] ?? '',
         price: (widget.service['price'] ?? 0.0).toDouble(),
         originalPrice: widget.service['original_price'] != null
@@ -158,277 +174,183 @@ class _DetailsPageState extends State<DetailsPage> {
         providerRating: widget.service['provider_rating'] != null
             ? (widget.service['provider_rating'] as num).toDouble()
             : null,
+        providerImage: widget.service['provider_image'],
       );
-
-      Navigator.pushNamed(context, '/booking', arguments: serviceModel);
+      Navigator.push(
+        context,
+        MaterialPageRoute(
+          builder: (_) => BookingScreen(serviceData: widget.service),
+        ),
+      );
     }
   }
 
   @override
-  Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(
-        title: Text(widget.service['title'] ?? 'تفاصيل الخدمة'),
-        backgroundColor: Colors.purple,
-        foregroundColor: Colors.white,
-      ),
-      body: SingleChildScrollView(
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            // صورة الخدمة
-            if (widget.service['images'] != null &&
-                (widget.service['images'] as List).isNotEmpty)
+  Widget build(BuildContext context) => WillPopScope(
+    onWillPop: () async {
+      Navigator.pushNamedAndRemoveUntil(
+        context,
+        '/user_home',
+        (route) => false,
+      );
+      return false;
+    },
+    child: SafeArea(
+      child: Scaffold(
+        appBar: AppBar(
+          title: Text(widget.service['name']),
+          backgroundColor: Colors.purple,
+          foregroundColor: Colors.white,
+          elevation: 0,
+        ),
+        body: SingleChildScrollView(
+          padding: const EdgeInsets.all(16),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              // صورة الخدمة
               Container(
-                height: 200,
                 width: double.infinity,
-                child: PageView.builder(
-                  itemCount: (widget.service['images'] as List).length,
-                  itemBuilder: (context, index) {
-                    return Image.network(
-                      'http://127.0.0.1/asha_app_backend/uploads/${widget.service['images'][index]}',
-                      fit: BoxFit.cover,
-                      errorBuilder: (context, error, stackTrace) {
-                        return Container(
-                          color: Colors.grey[300],
-                          child: const Icon(Icons.image, size: 50),
-                        );
-                      },
-                    );
-                  },
+                height: 250,
+                decoration: BoxDecoration(
+                  borderRadius: BorderRadius.circular(12),
+                  boxShadow: [
+                    BoxShadow(
+                      color: Colors.black.withOpacity(0.1),
+                      blurRadius: 10,
+                      offset: const Offset(0, 5),
+                    ),
+                  ],
+                ),
+                child: ClipRRect(
+                  borderRadius: BorderRadius.circular(12),
+                  child: Image.network(
+                    widget.service['image'] ?? '',
+                    fit: BoxFit.cover,
+                    errorBuilder: (context, error, stackTrace) {
+                      return Container(
+                        color: Colors.purple[100],
+                        child: const Icon(
+                          Icons.image,
+                          size: 80,
+                          color: Colors.purple,
+                        ),
+                      );
+                    },
+                  ),
                 ),
               ),
+              const SizedBox(height: 20),
 
-            Padding(
-              padding: const EdgeInsets.all(16.0),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
+              // عنوان الخدمة
+              Text(
+                widget.service['name'] ?? '',
+                style: const TextStyle(
+                  fontSize: 24,
+                  fontWeight: FontWeight.bold,
+                  color: Colors.purple,
+                ),
+              ),
+              const SizedBox(height: 8),
+
+              // مقدم الخدمة
+              Row(
                 children: [
-                  // عنوان الخدمة
+                  const Icon(Icons.person, color: Colors.purple, size: 20),
+                  const SizedBox(width: 8),
                   Text(
-                    widget.service['title'] ?? 'عنوان الخدمة',
-                    style: const TextStyle(
-                      fontSize: 24,
-                      fontWeight: FontWeight.bold,
-                    ),
+                    widget.service['provider_name'] ?? 'غير محدد',
+                    style: const TextStyle(fontSize: 16, color: Colors.grey),
                   ),
-                  const SizedBox(height: 8),
-
-                  // وصف الخدمة
-                  Text(
-                    widget.service['description'] ?? 'وصف الخدمة',
-                    style: const TextStyle(fontSize: 16),
-                  ),
-                  const SizedBox(height: 16),
-
-                  // معلومات الخدمة
-                  Row(
-                    children: [
-                      Icon(Icons.location_on, color: Colors.grey[600]),
-                      const SizedBox(width: 8),
-                      Text(
-                        widget.service['city'] ?? 'المدينة',
-                        style: TextStyle(color: Colors.grey[600]),
-                      ),
-                    ],
-                  ),
-                  const SizedBox(height: 8),
-
-                  Row(
-                    children: [
-                      Icon(Icons.category, color: Colors.grey[600]),
-                      const SizedBox(width: 8),
-                      Text(
-                        widget.service['category_name'] ?? 'الفئة',
-                        style: TextStyle(color: Colors.grey[600]),
-                      ),
-                    ],
-                  ),
-                  const SizedBox(height: 8),
-
-                  Row(
-                    children: [
-                      Icon(Icons.person, color: Colors.grey[600]),
-                      const SizedBox(width: 8),
-                      Text(
-                        widget.service['provider_name'] ?? 'المزود',
-                        style: TextStyle(color: Colors.grey[600]),
-                      ),
-                    ],
-                  ),
-                  const SizedBox(height: 16),
-
-                  // السعر
-                  Container(
-                    padding: const EdgeInsets.all(16),
-                    decoration: BoxDecoration(
-                      color: Colors.purple[50],
-                      borderRadius: BorderRadius.circular(8),
-                    ),
-                    child: Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                      children: [
-                        Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            const Text(
-                              'السعر',
-                              style: TextStyle(
-                                fontSize: 14,
-                                color: Colors.grey,
-                              ),
-                            ),
-                            Text(
-                              '${widget.service['price'] ?? 0} ريال',
-                              style: const TextStyle(
-                                fontSize: 24,
-                                fontWeight: FontWeight.bold,
-                                color: Colors.purple,
-                              ),
-                            ),
-                          ],
-                        ),
-                        Row(
-                          children: [
-                            IconButton(
-                              onPressed: _isLoading ? null : _toggleFavorite,
-                              icon: Icon(
-                                _isFavorite
-                                    ? Icons.favorite
-                                    : Icons.favorite_border,
-                                color: _isFavorite ? Colors.red : Colors.grey,
-                                size: 28,
-                              ),
-                            ),
-                            ElevatedButton(
-                              onPressed: _onBookPressed,
-                              style: ElevatedButton.styleFrom(
-                                backgroundColor: Colors.purple,
-                                foregroundColor: Colors.white,
-                                padding: const EdgeInsets.symmetric(
-                                  horizontal: 24,
-                                  vertical: 12,
-                                ),
-                              ),
-                              child: const Text('احجز الآن'),
-                            ),
-                          ],
-                        ),
-                      ],
-                    ),
-                  ),
-
-                  const SizedBox(height: 24),
-
-                  // المواصفات
-                  if (widget.service['specifications'] != null &&
-                      (widget.service['specifications'] as List)
-                          .isNotEmpty) ...[
-                    const Text(
-                      'المواصفات',
-                      style: TextStyle(
-                        fontSize: 18,
-                        fontWeight: FontWeight.bold,
-                      ),
-                    ),
-                    const SizedBox(height: 8),
-                    ...(widget.service['specifications'] as List).map((spec) {
-                      return Padding(
-                        padding: const EdgeInsets.symmetric(vertical: 4),
-                        child: Row(
-                          children: [
-                            const Icon(Icons.check_circle, color: Colors.green),
-                            const SizedBox(width: 8),
-                            Expanded(child: Text(spec.toString())),
-                          ],
-                        ),
-                      );
-                    }),
-                    const SizedBox(height: 16),
-                  ],
-
-                  // العلامات
-                  if (widget.service['tags'] != null &&
-                      (widget.service['tags'] as List).isNotEmpty) ...[
-                    const Text(
-                      'العلامات',
-                      style: TextStyle(
-                        fontSize: 18,
-                        fontWeight: FontWeight.bold,
-                      ),
-                    ),
-                    const SizedBox(height: 8),
-                    Wrap(
-                      spacing: 8,
-                      runSpacing: 8,
-                      children: (widget.service['tags'] as List).map((tag) {
-                        return Chip(
-                          label: Text(tag.toString()),
-                          backgroundColor: Colors.purple[100],
-                        );
-                      }).toList(),
-                    ),
-                    const SizedBox(height: 16),
-                  ],
-
-                  // شروط الدفع
-                  if (widget.service['payment_terms'] != null &&
-                      (widget.service['payment_terms'] as List).isNotEmpty) ...[
-                    const Text(
-                      'شروط الدفع',
-                      style: TextStyle(
-                        fontSize: 18,
-                        fontWeight: FontWeight.bold,
-                      ),
-                    ),
-                    const SizedBox(height: 8),
-                    ...(widget.service['payment_terms'] as List).map((term) {
-                      return Padding(
-                        padding: const EdgeInsets.symmetric(vertical: 4),
-                        child: Row(
-                          children: [
-                            const Icon(Icons.payment, color: Colors.blue),
-                            const SizedBox(width: 8),
-                            Expanded(child: Text(term.toString())),
-                          ],
-                        ),
-                      );
-                    }),
-                    const SizedBox(height: 16),
-                  ],
-
-                  // التوفر
-                  if (widget.service['availability'] != null &&
-                      (widget.service['availability'] as List).isNotEmpty) ...[
-                    const Text(
-                      'التوفر',
-                      style: TextStyle(
-                        fontSize: 18,
-                        fontWeight: FontWeight.bold,
-                      ),
-                    ),
-                    const SizedBox(height: 8),
-                    ...(widget.service['availability'] as List).map((
-                      availability,
-                    ) {
-                      return Padding(
-                        padding: const EdgeInsets.symmetric(vertical: 4),
-                        child: Row(
-                          children: [
-                            const Icon(Icons.schedule, color: Colors.orange),
-                            const SizedBox(width: 8),
-                            Expanded(child: Text(availability.toString())),
-                          ],
-                        ),
-                      );
-                    }),
-                  ],
                 ],
               ),
-            ),
-          ],
+              const SizedBox(height: 16),
+
+              // السعر
+              Container(
+                padding: const EdgeInsets.all(12),
+                decoration: BoxDecoration(
+                  color: Colors.purple[50],
+                  borderRadius: BorderRadius.circular(8),
+                  border: Border.all(color: Colors.purple[200]!),
+                ),
+                child: Row(
+                  children: [
+                    const Icon(Icons.attach_money, color: Colors.purple),
+                    const SizedBox(width: 8),
+                    Text(
+                      '${widget.service['price'] ?? 0} ريال',
+                      style: const TextStyle(
+                        fontSize: 18,
+                        fontWeight: FontWeight.bold,
+                        color: Colors.purple,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              const SizedBox(height: 20),
+
+              // الوصف
+              const Text(
+                'الوصف',
+                style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+              ),
+              const SizedBox(height: 8),
+              Text(
+                widget.service['description'] ?? 'لا يوجد وصف متاح',
+                style: const TextStyle(fontSize: 16, height: 1.5),
+              ),
+              const SizedBox(height: 20),
+
+              // أزرار الحجز والمفضلة
+              Row(
+                children: [
+                  Expanded(
+                    child: ElevatedButton.icon(
+                      onPressed: _isLoading ? null : _toggleFavorite,
+                      icon: _isLoading
+                          ? const SizedBox(
+                              width: 20,
+                              height: 20,
+                              child: CircularProgressIndicator(strokeWidth: 2),
+                            )
+                          : Icon(
+                              _isFavorite
+                                  ? Icons.favorite
+                                  : Icons.favorite_border,
+                            ),
+                      label: Text(
+                        _isFavorite ? 'إزالة من المفضلة' : 'إضافة للمفضلة',
+                      ),
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: _isFavorite
+                            ? Colors.red
+                            : Colors.purple,
+                        foregroundColor: Colors.white,
+                        padding: const EdgeInsets.symmetric(vertical: 12),
+                      ),
+                    ),
+                  ),
+                  const SizedBox(width: 12),
+                  Expanded(
+                    child: ElevatedButton(
+                      onPressed: _onBookPressed,
+                      child: const Text('احجز الآن'),
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: Colors.purple,
+                        foregroundColor: Colors.white,
+                        padding: const EdgeInsets.symmetric(vertical: 12),
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 20),
+            ],
+          ),
         ),
       ),
-    );
-  }
+    ),
+  );
 }

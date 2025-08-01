@@ -1,327 +1,438 @@
 import 'dart:convert';
-import 'dart:io';
 import 'package:http/http.dart' as http;
 import '../config/config.dart';
+import 'api_service.dart';
 
 class UnifiedDataService {
-  static const String _baseUrl = Config.apiBaseUrl;
-  static const Duration _timeout = Duration(seconds: 30);
+  static const String baseUrl = Config.apiBaseUrl;
 
-  // Helper method to handle HTTP requests
-  static Future<Map<String, dynamic>> _makeRequest(
-    String endpoint, {
-    Map<String, String>? headers,
-    Object? body,
-    bool isPost = false,
-    bool isPut = false,
-    bool isDelete = false,
+  // ==================== الخدمات المميزة ====================
+
+  // جلب الخدمات المميزة
+  static Future<Map<String, dynamic>> getFeaturedServices({
+    int? categoryId,
+    int? limit = 10,
   }) async {
     try {
-      final uri = Uri.parse('$_baseUrl/$endpoint');
-      final requestHeaders = {
-        'Content-Type': 'application/json',
-        'Accept': 'application/json',
-        'User-Agent': 'EventServicesApp/${Config.appVersion}',
-        ...?headers,
-      };
-
-      print(
-        '🔍 API Request: ${isPost
-            ? 'POST'
-            : isPut
-            ? 'PUT'
-            : isDelete
-            ? 'DELETE'
-            : 'GET'} $uri',
+      final result = await ApiService.getFeaturedServices(
+        categoryId: categoryId,
+        limit: limit,
       );
 
-      http.Response response;
-      if (isPost) {
-        response = await http
-            .post(uri, headers: requestHeaders, body: body)
-            .timeout(_timeout);
-      } else if (isPut) {
-        response = await http
-            .put(uri, headers: requestHeaders, body: body)
-            .timeout(_timeout);
-      } else if (isDelete) {
-        response = await http
-            .delete(uri, headers: requestHeaders, body: body)
-            .timeout(_timeout);
+      if (result['success'] == true) {
+        return {
+          'success': true,
+          'data': result['data'],
+          'total': result['total'],
+          'message': 'تم جلب الخدمات المميزة بنجاح',
+        };
       } else {
-        response = await http
-            .get(uri, headers: requestHeaders)
-            .timeout(_timeout);
-      }
-
-      print('📊 API Response: ${response.statusCode} - ${response.body}');
-
-      if (response.statusCode >= 200 && response.statusCode < 300) {
-        try {
-          final responseData = json.decode(response.body);
-          return responseData;
-        } catch (e) {
-          print('Error parsing JSON response: $e');
-          return {'success': false, 'message': 'خطأ في تنسيق البيانات'};
-        }
-      } else {
-        print('HTTP Error: ${response.statusCode} - ${response.reasonPhrase}');
         return {
           'success': false,
-          'message': 'خطأ في الاتصال بالخادم (${response.statusCode})',
+          'data': [],
+          'message': result['message'] ?? 'خطأ في جلب الخدمات المميزة',
         };
       }
-    } on SocketException catch (e) {
-      print('Socket Exception: $e');
-      return {'success': false, 'message': 'خطأ في الاتصال بالشبكة'};
     } catch (e) {
-      print('API Error: $e');
-      return {'success': false, 'message': 'خطأ في الاتصال: $e'};
+      return {'success': false, 'data': [], 'message': 'خطأ في الاتصال: $e'};
     }
   }
 
-  // 🟢 جلب الفئات - نفس الطريقة المستخدمة في user-home
-  static Future<List<Map<String, dynamic>>> getCategories() async {
+  // ==================== الفئات ====================
+
+  // جلب جميع الفئات
+  static Future<Map<String, dynamic>> getAllCategories() async {
     try {
-      print('🔍 Making request to categories API...');
-      final data = await _makeRequest('api/services/get_categories.php');
-      print('📊 API response: $data');
+      final result = await ApiService.getAllCategories();
 
-      if (data['success'] == true) {
-        final categoriesData = data['data'];
-        print('📋 Categories data: $categoriesData');
-
-        if (categoriesData is List) {
-          final result = categoriesData
-              .where((item) => item is Map<String, dynamic>)
-              .map((item) => Map<String, dynamic>.from(item))
-              .toList();
-          print('✅ Processed categories: ${result.length} categories');
-          return result;
-        } else {
-          print(
-            '⚠️ Categories data is not a List: ${categoriesData.runtimeType}',
-          );
-        }
+      if (result['success'] == true) {
+        return {
+          'success': true,
+          'data': result['data'],
+          'total': result['total'],
+          'message': 'تم جلب الفئات بنجاح',
+        };
       } else {
-        print('❌ API returned success: false - ${data['message']}');
+        return {
+          'success': false,
+          'data': [],
+          'message': result['message'] ?? 'خطأ في جلب الفئات',
+        };
       }
-      return [];
     } catch (e) {
-      print('❌ Error fetching categories: $e');
-      return [];
+      return {'success': false, 'data': [], 'message': 'خطأ في الاتصال: $e'};
     }
   }
 
-  // 🟢 جلب الخدمات - نفس الطريقة المستخدمة في user-home
-  static Future<Map<String, dynamic>> getServices({
+  // جلب فئة محددة
+  static Future<Map<String, dynamic>> getCategoryById(int categoryId) async {
+    try {
+      final result = await ApiService.getCategoryById(categoryId);
+
+      if (result['success'] == true) {
+        return {
+          'success': true,
+          'data': result['data'],
+          'message': 'تم جلب معلومات الفئة بنجاح',
+        };
+      } else {
+        return {
+          'success': false,
+          'data': null,
+          'message': result['message'] ?? 'خطأ في جلب معلومات الفئة',
+        };
+      }
+    } catch (e) {
+      return {'success': false, 'data': null, 'message': 'خطأ في الاتصال: $e'};
+    }
+  }
+
+  // ==================== مزودي الخدمات ====================
+
+  // جلب مزودي الخدمات حسب الفئة
+  static Future<Map<String, dynamic>> getProvidersByCategory(
+    int categoryId,
+  ) async {
+    try {
+      final result = await ApiService.getProvidersByCategory(categoryId);
+
+      if (result['success'] == true) {
+        return {
+          'success': true,
+          'data': result['data'],
+          'total': result['total'],
+          'message': 'تم جلب مزودي الخدمات بنجاح',
+        };
+      } else {
+        return {
+          'success': false,
+          'data': [],
+          'message': result['message'] ?? 'خطأ في جلب مزودي الخدمات',
+        };
+      }
+    } catch (e) {
+      return {'success': false, 'data': [], 'message': 'خطأ في الاتصال: $e'};
+    }
+  }
+
+  // جلب جميع المزودين مع فلترة متقدمة
+  static Future<Map<String, dynamic>> getAllProviders({
     int? categoryId,
-    int limit = 10,
-    int offset = 0,
+    String? search,
+    String? sortBy,
+    String? sortOrder,
+    int? limit,
+    int? offset,
   }) async {
     try {
-      print('🔍 Fetching services...');
-      print(
-        '📋 Parameters: categoryId=$categoryId, limit=$limit, offset=$offset',
+      final result = await ApiService.getAllProviders(
+        categoryId: categoryId,
+        search: search,
+        sortBy: sortBy,
+        sortOrder: sortOrder,
+        limit: limit,
+        offset: offset,
       );
 
-      final queryParams = <String, String>{
-        'limit': limit.toString(),
-        'offset': offset.toString(),
+      if (result['success'] == true) {
+        return {
+          'success': true,
+          'data': result['data'],
+          'total': result['total'],
+          'message': 'تم جلب مزودي الخدمات بنجاح',
+        };
+      } else {
+        return {
+          'success': false,
+          'data': [],
+          'message': result['message'] ?? 'خطأ في جلب مزودي الخدمات',
+        };
+      }
+    } catch (e) {
+      return {'success': false, 'data': [], 'message': 'خطأ في الاتصال: $e'};
+    }
+  }
+
+  // جلب خدمات مزود معين
+  static Future<Map<String, dynamic>> getProviderServices(
+    int providerId, {
+    int? categoryId,
+  }) async {
+    try {
+      final result = await ApiService.getProviderServices(
+        providerId,
+        categoryId: categoryId,
+      );
+
+      if (result['success'] == true) {
+        return {
+          'success': true,
+          'data': result['data'],
+          'message': 'تم جلب خدمات المزود بنجاح',
+        };
+      } else {
+        return {
+          'success': false,
+          'data': null,
+          'message': result['message'] ?? 'خطأ في جلب خدمات المزود',
+        };
+      }
+    } catch (e) {
+      return {'success': false, 'data': null, 'message': 'خطأ في الاتصال: $e'};
+    }
+  }
+
+  // جلب معلومات مزود معين
+  static Future<Map<String, dynamic>> getProviderProfile(int providerId) async {
+    try {
+      final result = await ApiService.getProviderProfile(providerId);
+
+      if (result['success'] == true) {
+        return {
+          'success': true,
+          'data': result['data'],
+          'message': 'تم جلب معلومات المزود بنجاح',
+        };
+      } else {
+        return {
+          'success': false,
+          'data': null,
+          'message': result['message'] ?? 'خطأ في جلب معلومات المزود',
+        };
+      }
+    } catch (e) {
+      return {'success': false, 'data': null, 'message': 'خطأ في الاتصال: $e'};
+    }
+  }
+
+  // ==================== جلب جميع البيانات المطلوبة ====================
+
+  // جلب البيانات الرئيسية للصفحة الرئيسية
+  static Future<Map<String, dynamic>> getHomePageData() async {
+    try {
+      // جلب الخدمات المميزة
+      final featuredServices = await getFeaturedServices(limit: 10);
+
+      // جلب جميع الفئات
+      final categories = await getAllCategories();
+
+      // جلب الإعلانات النشطة
+      final ads = await ApiService.getActiveAds();
+
+      return {
+        'success': true,
+        'data': {
+          'featured_services': featuredServices['data'] ?? [],
+          'categories': categories['data'] ?? [],
+          'ads': ads['data'] ?? [],
+        },
+        'message': 'تم جلب البيانات بنجاح',
+      };
+    } catch (e) {
+      return {
+        'success': false,
+        'data': {'featured_services': [], 'categories': [], 'ads': []},
+        'message': 'خطأ في جلب البيانات: $e',
+      };
+    }
+  }
+
+  // جلب بيانات صفحة الفئة
+  static Future<Map<String, dynamic>> getCategoryPageData(
+    int categoryId,
+  ) async {
+    try {
+      // جلب معلومات الفئة
+      final categoryInfo = await getCategoryById(categoryId);
+
+      // جلب مزودي الخدمات في هذه الفئة
+      final providers = await getProvidersByCategory(categoryId);
+
+      // جلب الخدمات المميزة في هذه الفئة
+      final featuredServices = await getFeaturedServices(
+        categoryId: categoryId,
+        limit: 5,
+      );
+
+      return {
+        'success': true,
+        'data': {
+          'category': categoryInfo['data']?['category'],
+          'providers': providers['data'] ?? [],
+          'featured_services': featuredServices['data'] ?? [],
+        },
+        'message': 'تم جلب بيانات الفئة بنجاح',
+      };
+    } catch (e) {
+      return {
+        'success': false,
+        'data': {'category': null, 'providers': [], 'featured_services': []},
+        'message': 'خطأ في جلب بيانات الفئة: $e',
+      };
+    }
+  }
+
+  // جلب بيانات صفحة المزود
+  static Future<Map<String, dynamic>> getProviderPageData(
+    int providerId,
+  ) async {
+    try {
+      // جلب معلومات المزود
+      final providerInfo = await getProviderProfile(providerId);
+
+      // جلب خدمات المزود
+      final providerServices = await getProviderServices(providerId);
+
+      return {
+        'success': true,
+        'data': {
+          'provider': providerInfo['data']?['provider'],
+          'services': providerServices['data']?['services'] ?? [],
+          'featured_services': providerInfo['data']?['featured_services'] ?? [],
+          'recent_reviews': providerInfo['data']?['recent_reviews'] ?? [],
+        },
+        'message': 'تم جلب بيانات المزود بنجاح',
+      };
+    } catch (e) {
+      return {
+        'success': false,
+        'data': {
+          'provider': null,
+          'services': [],
+          'featured_services': [],
+          'recent_reviews': [],
+        },
+        'message': 'خطأ في جلب بيانات المزود: $e',
+      };
+    }
+  }
+
+  // ==================== المفضلة ====================
+
+  // إضافة/إزالة من المفضلة
+  static Future<Map<String, dynamic>> toggleFavorite(
+    int userId,
+    int serviceId,
+  ) async {
+    try {
+      final result = await ApiService.toggleFavorite(
+        userId: userId,
+        serviceId: serviceId,
+      );
+
+      if (result['success'] == true) {
+        return {
+          'success': true,
+          'data': result['data'],
+          'message': result['message'] ?? 'تم تحديث المفضلة بنجاح',
+        };
+      } else {
+        return {
+          'success': false,
+          'data': null,
+          'message': result['message'] ?? 'خطأ في تحديث المفضلة',
+        };
+      }
+    } catch (e) {
+      return {'success': false, 'data': null, 'message': 'خطأ في الاتصال: $e'};
+    }
+  }
+
+  // ==================== التقييمات ====================
+
+  // إضافة تقييم جديد
+  static Future<Map<String, dynamic>> createReview({
+    required int userId,
+    required int serviceId,
+    required int rating,
+    required String comment,
+  }) async {
+    try {
+      final reviewData = {
+        'user_id': userId,
+        'service_id': serviceId,
+        'rating': rating,
+        'comment': comment,
       };
 
-      if (categoryId != null) {
-        queryParams['category_id'] = categoryId.toString();
-      }
+      final result = await ApiService.createReview(reviewData);
 
-      final queryString = queryParams.entries
-          .map((e) => '${e.key}=${Uri.encodeComponent(e.value)}')
-          .join('&');
-
-      print('🔗 Request URL: api/services/get_all.php?$queryString');
-
-      final data = await _makeRequest('api/services/get_all.php?$queryString');
-      print('📊 API response: $data');
-
-      if (data['success'] == true) {
-        final servicesData = data['data'];
-        print('📋 Services data: $servicesData');
-
-        if (servicesData is List) {
-          final result = {
-            'services': servicesData,
-            'pagination': data['pagination'] ?? {},
-          };
-          print('✅ Processed services: ${servicesData.length} services');
-          return result;
-        } else {
-          print('⚠️ Services data is not a List: ${servicesData.runtimeType}');
-          return {'services': [], 'pagination': {}};
-        }
+      if (result['success'] == true) {
+        return {
+          'success': true,
+          'data': result['data'],
+          'message': result['message'] ?? 'تم إضافة التقييم بنجاح',
+        };
       } else {
-        print('❌ API returned success: false - ${data['message']}');
-        return {'services': [], 'pagination': {}};
+        return {
+          'success': false,
+          'data': null,
+          'message': result['message'] ?? 'خطأ في إضافة التقييم',
+        };
       }
     } catch (e) {
-      print('❌ Error fetching services: $e');
-      return {'services': [], 'pagination': {}};
+      return {'success': false, 'data': null, 'message': 'خطأ في الاتصال: $e'};
     }
   }
 
-  // 🟢 جلب الإعلانات
-  static Future<List<Map<String, dynamic>>> getAds() async {
+  // ==================== تفاصيل الخدمة ====================
+
+  // جلب تفاصيل الخدمة
+  static Future<Map<String, dynamic>> getServiceDetails(
+    int serviceId, {
+    int? userId,
+  }) async {
     try {
-      print('🔍 Making request to ads API...');
-      final data = await _makeRequest('api/ads/get_active_ads.php');
-      print('📊 API response: $data');
-
-      if (data['success'] == true) {
-        final adsData = data['data'];
-        print('📋 Ads data: $adsData');
-
-        if (adsData is List) {
-          final result = adsData
-              .where((item) => item is Map<String, dynamic>)
-              .map((item) => Map<String, dynamic>.from(item))
-              .toList();
-          print('✅ Processed ads: ${result.length} ads');
-          return result;
-        } else {
-          print('⚠️ Ads data is not a List: ${adsData.runtimeType}');
-        }
-      } else {
-        print('❌ API returned success: false - ${data['message']}');
+      final params = {
+        'service_id': serviceId,
+      };
+      
+      if (userId != null) {
+        params['user_id'] = userId;
       }
-      return [];
+
+      final result = await ApiService.getServiceDetails(params);
+
+      if (result['success'] == true) {
+        return {
+          'success': true,
+          'data': result['data'],
+          'message': result['message'] ?? 'تم جلب تفاصيل الخدمة بنجاح',
+        };
+      } else {
+        return {
+          'success': false,
+          'data': null,
+          'message': result['message'] ?? 'خطأ في جلب تفاصيل الخدمة',
+        };
+      }
     } catch (e) {
-      print('❌ Error fetching ads: $e');
-      return [];
+      return {'success': false, 'data': null, 'message': 'خطأ في الاتصال: $e'};
     }
   }
 
-  // 🟢 جلب المستخدمين
-  static Future<List<Map<String, dynamic>>> getUsers() async {
+  // ==================== الإعلانات ====================
+
+  // جلب الإعلانات النشطة
+  static Future<Map<String, dynamic>> getActiveAds() async {
     try {
-      print('🔍 Making request to users API...');
-      final data = await _makeRequest('api/users/get_all.php');
-      print('📊 API response: $data');
+      final result = await ApiService.getActiveAds();
 
-      if (data['success'] == true) {
-        final usersData = data['data'];
-        print('📋 Users data: $usersData');
-
-        if (usersData is List) {
-          final result = usersData
-              .where((item) => item is Map<String, dynamic>)
-              .map((item) => Map<String, dynamic>.from(item))
-              .toList();
-          print('✅ Processed users: ${result.length} users');
-          return result;
-        } else {
-          print('⚠️ Users data is not a List: ${usersData.runtimeType}');
-        }
+      if (result['success'] == true) {
+        return {
+          'success': true,
+          'data': result['data'],
+          'message': result['message'] ?? 'تم جلب الإعلانات بنجاح',
+        };
       } else {
-        print('❌ API returned success: false - ${data['message']}');
+        return {
+          'success': false,
+          'data': [],
+          'message': result['message'] ?? 'خطأ في جلب الإعلانات',
+        };
       }
-      return [];
     } catch (e) {
-      print('❌ Error fetching users: $e');
-      return [];
-    }
-  }
-
-  // 🟢 جلب الحجوزات
-  static Future<List<Map<String, dynamic>>> getBookings() async {
-    try {
-      print('🔍 Making request to bookings API...');
-      final data = await _makeRequest('api/bookings/get_all.php');
-      print('📊 API response: $data');
-
-      if (data['success'] == true) {
-        final bookingsData = data['data'];
-        print('📋 Bookings data: $bookingsData');
-
-        if (bookingsData is List) {
-          final result = bookingsData
-              .where((item) => item is Map<String, dynamic>)
-              .map((item) => Map<String, dynamic>.from(item))
-              .toList();
-          print('✅ Processed bookings: ${result.length} bookings');
-          return result;
-        } else {
-          print('⚠️ Bookings data is not a List: ${bookingsData.runtimeType}');
-        }
-      } else {
-        print('❌ API returned success: false - ${data['message']}');
-      }
-      return [];
-    } catch (e) {
-      print('❌ Error fetching bookings: $e');
-      return [];
-    }
-  }
-
-  // 🟢 جلب التقييمات
-  static Future<List<Map<String, dynamic>>> getReviews() async {
-    try {
-      print('🔍 Making request to reviews API...');
-      final data = await _makeRequest('api/reviews/get_all.php');
-      print('📊 API response: $data');
-
-      if (data['success'] == true) {
-        final reviewsData = data['data'];
-        print('📋 Reviews data: $reviewsData');
-
-        if (reviewsData is List) {
-          final result = reviewsData
-              .where((item) => item is Map<String, dynamic>)
-              .map((item) => Map<String, dynamic>.from(item))
-              .toList();
-          print('✅ Processed reviews: ${result.length} reviews');
-          return result;
-        } else {
-          print('⚠️ Reviews data is not a List: ${reviewsData.runtimeType}');
-        }
-      } else {
-        print('❌ API returned success: false - ${data['message']}');
-      }
-      return [];
-    } catch (e) {
-      print('❌ Error fetching reviews: $e');
-      return [];
-    }
-  }
-
-  // 🟢 جلب المفضلة
-  static Future<List<Map<String, dynamic>>> getFavorites() async {
-    try {
-      print('🔍 Making request to favorites API...');
-      final data = await _makeRequest('api/favorites/get_all.php');
-      print('📊 API response: $data');
-
-      if (data['success'] == true) {
-        final favoritesData = data['data'];
-        print('📋 Favorites data: $favoritesData');
-
-        if (favoritesData is List) {
-          final result = favoritesData
-              .where((item) => item is Map<String, dynamic>)
-              .map((item) => Map<String, dynamic>.from(item))
-              .toList();
-          print('✅ Processed favorites: ${result.length} favorites');
-          return result;
-        } else {
-          print(
-            '⚠️ Favorites data is not a List: ${favoritesData.runtimeType}',
-          );
-        }
-      } else {
-        print('❌ API returned success: false - ${data['message']}');
-      }
-      return [];
-    } catch (e) {
-      print('❌ Error fetching favorites: $e');
-      return [];
+      return {'success': false, 'data': [], 'message': 'خطأ في الاتصال: $e'};
     }
   }
 }

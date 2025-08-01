@@ -1,119 +1,89 @@
 class AdModel {
+  final int id;
+  final String title;
+  final String description;
+  final String image;
+  final bool isActive;
+  final String? startDate;
+  final String? endDate;
+  final String createdAt;
+  final String? providerName;
+  final int? providerId;
+  final String? link;
+  final bool hasLink;
+
   AdModel({
     required this.id,
     required this.title,
     required this.description,
     required this.image,
-    this.link,
-    this.isActive = true,
-    this.priority = 0,
+    required this.isActive,
     this.startDate,
     this.endDate,
-    this.createdAt,
-    this.updatedAt,
+    required this.createdAt,
     this.providerName,
     this.providerId,
+    this.link,
+    this.hasLink = false,
   });
 
-  factory AdModel.fromJson(Map<String, dynamic> json) => AdModel(
-    id: int.tryParse(json['id'].toString()) ?? 0,
-    title: json['title'] ?? '',
-    description: json['description'] ?? '',
-    image: json['image'] ?? '',
-    link: json['link'],
-    isActive: json['is_active'] == true || json['is_active'] == 1,
-    priority: int.tryParse(json['priority'].toString()) ?? 0,
-    startDate: json['start_date'] != null
-        ? DateTime.tryParse(json['start_date'])
-        : null,
-    endDate: json['end_date'] != null
-        ? DateTime.tryParse(json['end_date'])
-        : null,
-    createdAt: json['created_at'] != null
-        ? DateTime.tryParse(json['created_at'])
-        : null,
-    updatedAt: json['updated_at'] != null
-        ? DateTime.tryParse(json['updated_at'])
-        : null,
-    providerName: json['provider_name'],
-    providerId: json['provider_id'] != null
-        ? int.tryParse(json['provider_id'].toString())
-        : null,
-  );
-  final int id;
-  final String title;
-  final String description;
-  final String image;
-  final String? link;
-  final bool isActive;
-  final int priority;
-  final DateTime? startDate;
-  final DateTime? endDate;
-  final DateTime? createdAt;
-  final DateTime? updatedAt;
-  final String? providerName;
-  final int? providerId;
+  // Getter for validation
+  bool get isValid => id > 0 && title.isNotEmpty && isActive;
 
-  Map<String, dynamic> toJson() => {
-    'id': id,
-    'title': title,
-    'description': description,
-    'image': image,
-    'link': link,
-    'is_active': isActive,
-    'priority': priority,
-    'start_date': startDate?.toIso8601String(),
-    'end_date': endDate?.toIso8601String(),
-    'created_at': createdAt?.toIso8601String(),
-    'updated_at': updatedAt?.toIso8601String(),
-    'provider_name': providerName,
-    'provider_id': providerId,
-  };
+  // Getter for priority (using providerId as priority for now)
+  int get priority => providerId ?? 0;
 
-  AdModel copyWith({
-    int? id,
-    String? title,
-    String? description,
-    String? image,
-    String? link,
-    bool? isActive,
-    int? priority,
-    DateTime? startDate,
-    DateTime? endDate,
-    DateTime? createdAt,
-    DateTime? updatedAt,
-    String? providerName,
-    int? providerId,
-  }) => AdModel(
-    id: id ?? this.id,
-    title: title ?? this.title,
-    description: description ?? this.description,
-    image: image ?? this.image,
-    link: link ?? this.link,
-    isActive: isActive ?? this.isActive,
-    priority: priority ?? this.priority,
-    startDate: startDate ?? this.startDate,
-    endDate: endDate ?? this.endDate,
-    createdAt: createdAt ?? this.createdAt,
-    updatedAt: updatedAt ?? this.updatedAt,
-    providerName: providerName ?? this.providerName,
-    providerId: providerId ?? this.providerId,
-  );
-
-  bool get isValid => id != 0 && title.isNotEmpty && image.isNotEmpty;
-  bool get hasLink => link != null && link!.isNotEmpty;
-
-  @override
-  String toString() {
-    return 'AdModel(id: $id, title: $title, isActive: $isActive)';
+  // Convert string dates to DateTime
+  DateTime? get startDateTime {
+    if (startDate == null) return null;
+    try {
+      return DateTime.parse(startDate!);
+    } catch (e) {
+      return null;
+    }
   }
 
-  @override
-  bool operator ==(Object other) {
-    if (identical(this, other)) return true;
-    return other is AdModel && other.id == id;
+  DateTime? get endDateTime {
+    if (endDate == null) return null;
+    try {
+      return DateTime.parse(endDate!);
+    } catch (e) {
+      return null;
+    }
   }
 
-  @override
-  int get hashCode => id.hashCode;
+  factory AdModel.fromJson(Map<String, dynamic> json) {
+    return AdModel(
+      id: int.tryParse(json['id'].toString()) ?? 0,
+      title: json['title'] ?? '',
+      description: json['description'] ?? '',
+      image: json['image'] ?? json['imageUrl'] ?? '',
+      isActive: json['is_active'] == true || json['is_active'] == 1,
+      startDate: json['start_date'],
+      endDate: json['end_date'],
+      createdAt: json['created_at'] ?? '',
+      providerName: json['provider_name'] ?? json['providerName'],
+      providerId: json['provider_id'] != null
+          ? int.tryParse(json['provider_id'].toString())
+          : null,
+      link: json['link_url'] ?? json['link'],
+      hasLink: json['has_link'] == true || (json['link_url'] != null && json['link_url'].toString().isNotEmpty),
+    );
+  }
+
+  Map<String, dynamic> toJson() {
+    return {
+      'id': id,
+      'title': title,
+      'description': description,
+      'image': image,
+      'is_active': isActive,
+      'start_date': startDate,
+      'end_date': endDate,
+      'created_at': createdAt,
+      'provider_name': providerName,
+      'provider_id': providerId,
+      'link': link,
+    };
+  }
 }

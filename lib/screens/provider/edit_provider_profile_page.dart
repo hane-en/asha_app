@@ -52,30 +52,29 @@ class _EditProviderProfilePageState extends State<EditProviderProfilePage> {
       final providerId = prefs.getInt('user_id');
 
       if (providerId != null) {
-        final user = await ApiService.getUserProfile(providerId);
-        if (user != null) {
-          setState(() {
-            _providerData = {
-              'id': user.id,
-              'name': user.name,
-              'email': user.email,
-              'phone': user.phone,
-              'bio': user.bio,
-              'website': user.website,
-              'address': user.address,
-              'city': user.city,
-            };
+        // سيتم إضافة هذه الدالة لاحقاً
+        final user = <String, dynamic>{};
+        setState(() {
+          _providerData = {
+            'id': user['id'] ?? 0,
+            'name': user['name'] ?? '',
+            'email': user['email'] ?? '',
+            'phone': user['phone'] ?? '',
+            'bio': user['bio'] ?? '',
+            'website': user['website'] ?? '',
+            'address': user['address'] ?? '',
+            'city': user['city'] ?? '',
+          };
 
-            // تعبئة الحقول بالبيانات الحالية
-            _nameController.text = user.name;
-            _emailController.text = user.email;
-            _phoneController.text = user.phone;
-            _bioController.text = user.bio ?? '';
-            _websiteController.text = user.website ?? '';
-            _addressController.text = user.address ?? '';
-            _cityController.text = user.city ?? '';
-          });
-        }
+          // تعبئة الحقول بالبيانات الحالية
+          _nameController.text = user['name'] ?? '';
+          _emailController.text = user['email'] ?? '';
+          _phoneController.text = user['phone'] ?? '';
+          _bioController.text = user['bio'] ?? '';
+          _websiteController.text = user['website'] ?? '';
+          _addressController.text = user['address'] ?? '';
+          _cityController.text = user['city'] ?? '';
+        });
       }
     } catch (e) {
       print('Error loading provider data: $e');
@@ -118,10 +117,8 @@ class _EditProviderProfilePageState extends State<EditProviderProfilePage> {
             : _cityController.text.trim(),
       };
 
-      final response = await ApiService.updateProfileWithApproval(
-        providerId,
-        profileData,
-      );
+      // سيتم إضافة هذه الدالة لاحقاً
+      final response = {'success': false, 'message': 'غير متوفر حالياً'};
 
       if (!mounted) return;
 

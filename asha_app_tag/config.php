@@ -5,10 +5,10 @@
  */
 
 // إعدادات قاعدة البيانات
-// define('DB_HOST', 'localhost');
 define('DB_HOST', '127.0.0.1');
+// define('DB_HOST', 'localhost');
 // define('DB_HOST', '192.168.1.5');
-define('DB_NAME', 'asha_app');
+define('DB_NAME', 'asha_app_events');
 define('DB_USER', 'root');
 define('DB_PASS', '');
 define('DB_CHARSET', 'utf8mb4');
@@ -56,11 +56,13 @@ ini_set('display_errors', 1);
 // تعيين المنطقة الزمنية
 date_default_timezone_set(DEFAULT_TIMEZONE);
 
-// إعدادات CORS
-header('Access-Control-Allow-Origin: *');
-header('Access-Control-Allow-Methods: GET, POST, PUT, DELETE, OPTIONS');
-header('Access-Control-Allow-Headers: Content-Type, Authorization, X-Requested-With');
-header('Content-Type: application/json; charset=utf-8');
+// إعدادات CORS - فقط إذا لم يتم إرسال headers بعد
+if (!headers_sent()) {
+    header('Access-Control-Allow-Origin: *');
+    header('Access-Control-Allow-Methods: GET, POST, PUT, DELETE, OPTIONS');
+    header('Access-Control-Allow-Headers: Content-Type, Authorization, X-Requested-With');
+    header('Content-Type: application/json; charset=utf-8');
+}
 
 // التعامل مع طلبات OPTIONS
 if (isset($_SERVER['REQUEST_METHOD']) && $_SERVER['REQUEST_METHOD'] == 'OPTIONS') {

@@ -1,206 +1,213 @@
 <?php
-/**
- * ملف إضافة بيانات تجريبية للخدمات
- * يمكن الوصول إليها عبر: http://localhost/asha_app_backend/insert_sample_data.php
- */
-
-require_once 'config.php';
-require_once 'database.php';
-
-// إعداد CORS
+header('Content-Type: application/json; charset=utf-8');
 header('Access-Control-Allow-Origin: *');
-header('Content-Type: text/html; charset=utf-8');
+header('Access-Control-Allow-Methods: GET, POST, OPTIONS');
+header('Access-Control-Allow-Headers: Content-Type, Authorization');
 
-echo '<!DOCTYPE html>
-<html dir="rtl" lang="ar">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>إضافة بيانات تجريبية</title>
-    <style>
-        body { font-family: Arial, sans-serif; margin: 20px; background-color: #f5f5f5; }
-        .container { max-width: 1200px; margin: 0 auto; background: white; padding: 20px; border-radius: 8px; box-shadow: 0 2px 10px rgba(0,0,0,0.1); }
-        .section { margin: 20px 0; padding: 15px; border: 1px solid #ddd; border-radius: 5px; }
-        .success { background-color: #d4edda; border-color: #c3e6cb; }
-        .error { background-color: #f8d7da; border-color: #f5c6cb; }
-        .info { background-color: #d1ecf1; border-color: #bee5eb; }
-        .btn { display: inline-block; margin: 5px; padding: 8px 15px; background: #007bff; color: white; text-decoration: none; border-radius: 3px; }
-        .btn:hover { background: #0056b3; }
-        .btn-success { background: #28a745; }
-        .btn-danger { background: #dc3545; }
-    </style>
-</head>
-<body>
-    <div class="container">
-        <h1>📝 إضافة بيانات تجريبية</h1>';
-
-try {
-    $database = new Database();
-    $database->connect();
-    
-    echo '<div class="section success">
-        <h2>✅ تم الاتصال بقاعدة البيانات بنجاح</h2>
-    </div>';
-    
-    // التحقق من وجود فئات
-    $categoriesQuery = "SELECT COUNT(*) as total FROM categories";
-    $categoriesCount = $database->selectOne($categoriesQuery);
-    $categoriesExist = $categoriesCount && $categoriesCount['total'] > 0;
-    
-    if (!$categoriesExist) {
-        echo '<div class="section info">
-            <h2>📝 إضافة فئات تجريبية</h2>';
-        
-        $sampleCategories = [
-            ['name' => 'تصوير', 'description' => 'خدمات التصوير الاحترافي'],
-            ['name' => 'مطاعم', 'description' => 'خدمات المطاعم والضيافة'],
-            ['name' => 'قاعات', 'description' => 'قاعات الحفلات والمناسبات'],
-            ['name' => 'موسيقى', 'description' => 'خدمات الموسيقى والترفيه'],
-            ['name' => 'ديكور', 'description' => 'خدمات الديكور والتزيين'],
-            ['name' => 'نقل', 'description' => 'خدمات النقل والمواصلات'],
-            ['name' => 'أخرى', 'description' => 'خدمات أخرى متنوعة']
-        ];
-        
-        foreach ($sampleCategories as $category) {
-            $insertQuery = "INSERT INTO categories (name, description, is_active, created_at) VALUES (?, ?, 1, NOW())";
-            $database->execute($insertQuery, [$category['name'], $category['description']]);
-            echo '<p>✅ تم إضافة فئة: ' . $category['name'] . '</p>';
-        }
-        
-        echo '</div>';
-    } else {
-        echo '<div class="section info">
-            <h2>✅ الفئات موجودة بالفعل</h2>
-            <p>تم العثور على ' . $categoriesCount['total'] . ' فئة في قاعدة البيانات</p>
-        </div>';
-    }
-    
-    // التحقق من وجود مستخدمين مزودين
-    $providersQuery = "SELECT COUNT(*) as total FROM users WHERE user_type = 'provider'";
-    $providersCount = $database->selectOne($providersQuery);
-    $providersExist = $providersCount && $providersCount['total'] > 0;
-    
-    if (!$providersExist) {
-        echo '<div class="section info">
-            <h2>📝 إضافة مستخدمين مزودين تجريبيين</h2>';
-        
-        $sampleProviders = [
-            ['name' => 'أحمد محمد', 'email' => 'ahmed@example.com', 'phone' => '0501234567'],
-            ['name' => 'فاطمة علي', 'email' => 'fatima@example.com', 'phone' => '0502345678'],
-            ['name' => 'محمد حسن', 'email' => 'mohammed@example.com', 'phone' => '0503456789'],
-            ['name' => 'سارة أحمد', 'email' => 'sara@example.com', 'phone' => '0504567890'],
-            ['name' => 'علي محمد', 'email' => 'ali@example.com', 'phone' => '0505678901']
-        ];
-        
-        foreach ($sampleProviders as $provider) {
-            $insertQuery = "INSERT INTO users (name, email, phone, password, user_type, is_verified, is_active, created_at) VALUES (?, ?, ?, ?, 'provider', 1, 1, NOW())";
-            $database->execute($insertQuery, [$provider['name'], $provider['email'], $provider['phone'], password_hash('123456', PASSWORD_DEFAULT)]);
-            echo '<p>✅ تم إضافة مزود: ' . $provider['name'] . '</p>';
-        }
-        
-        echo '</div>';
-    } else {
-        echo '<div class="section info">
-            <h2>✅ المزودون موجودون بالفعل</h2>
-            <p>تم العثور على ' . $providersCount['total'] . ' مزود في قاعدة البيانات</p>
-        </div>';
-    }
-    
-    // إضافة خدمات تجريبية
-    echo '<div class="section info">
-        <h2>📝 إضافة خدمات تجريبية</h2>';
-    
-    // الحصول على الفئات والمزودين
-    $categories = $database->select("SELECT id, name FROM categories WHERE is_active = 1");
-    $providers = $database->select("SELECT id, name FROM users WHERE user_type = 'provider' AND is_active = 1");
-    
-    if ($categories && $providers) {
-        $sampleServices = [
-            [
-                'title' => 'تصوير احترافي للمناسبات',
-                'description' => 'خدمة تصوير احترافية لجميع أنواع المناسبات مع كاميرات عالية الجودة',
-                'price' => 500,
-                'category_id' => $categories[0]['id'],
-                'provider_id' => $providers[0]['id']
-            ],
-            [
-                'title' => 'خدمة المطاعم والضيافة',
-                'description' => 'خدمات المطاعم والضيافة للمناسبات الخاصة مع قوائم متنوعة',
-                'price' => 800,
-                'category_id' => $categories[1]['id'],
-                'provider_id' => $providers[1]['id']
-            ],
-            [
-                'title' => 'قاعة حفلات فاخرة',
-                'description' => 'قاعة حفلات فاخرة مجهزة بالكامل مع خدمة شاملة',
-                'price' => 1200,
-                'category_id' => $categories[2]['id'],
-                'provider_id' => $providers[2]['id']
-            ],
-            [
-                'title' => 'فرقة موسيقية احترافية',
-                'description' => 'فرقة موسيقية احترافية لجميع أنواع المناسبات مع مجموعة متنوعة من الموسيقى',
-                'price' => 600,
-                'category_id' => $categories[3]['id'],
-                'provider_id' => $providers[3]['id']
-            ],
-            [
-                'title' => 'خدمة الديكور والتزيين',
-                'description' => 'خدمة ديكور وتزيين احترافية للمناسبات مع تصميمات مخصصة',
-                'price' => 400,
-                'category_id' => $categories[4]['id'],
-                'provider_id' => $providers[4]['id']
-            ],
-            [
-                'title' => 'خدمة النقل الفاخر',
-                'description' => 'خدمة نقل فاخر للمناسبات مع سيارات حديثة وسائقين محترفين',
-                'price' => 300,
-                'category_id' => $categories[5]['id'],
-                'provider_id' => $providers[0]['id']
-            ]
-        ];
-        
-        foreach ($sampleServices as $service) {
-            $insertQuery = "INSERT INTO services (title, description, price, category_id, provider_id, is_active, is_verified, created_at) VALUES (?, ?, ?, ?, ?, 1, 1, NOW())";
-            $database->execute($insertQuery, [
-                $service['title'],
-                $service['description'],
-                $service['price'],
-                $service['category_id'],
-                $service['provider_id']
-            ]);
-            echo '<p>✅ تم إضافة خدمة: ' . $service['title'] . '</p>';
-        }
-        
-        echo '</div>';
-    } else {
-        echo '<div class="section error">
-            <h2>❌ لا يمكن إضافة خدمات</h2>
-            <p>يجب وجود فئات ومزودين أولاً</p>
-        </div>';
-    }
-    
-    // عرض النتيجة النهائية
-    echo '<div class="section success">
-        <h2>✅ تم إضافة البيانات التجريبية بنجاح</h2>
-        <p>يمكنك الآن اختبار التطبيق والتحقق من ظهور الخدمات</p>
-    </div>';
-    
-    // روابط مفيدة
-    echo '<div class="section info">
-        <h2>🔗 روابط مفيدة</h2>
-        <a href="check_database_status.php" class="btn">فحص حالة قاعدة البيانات</a>
-        <a href="test_services_api.php" class="btn">اختبار API الخدمات</a>
-        <a href="api/services/get_all.php" class="btn" target="_blank">API الخدمات</a>
-        <a href="clear_database.php" class="btn btn-danger">مسح جميع البيانات</a>
-    </div>';
-    
-} catch (Exception $e) {
-    echo '<div class="section error">
-        <h2>❌ خطأ في إضافة البيانات</h2>
-        <p><strong>الخطأ:</strong> ' . $e->getMessage() . '</p>
-    </div>';
+// التعامل مع طلبات OPTIONS
+if (isset($_SERVER['REQUEST_METHOD']) && $_SERVER['REQUEST_METHOD'] === 'OPTIONS') {
+    http_response_code(200);
+    exit();
 }
 
-echo '</div></body></html>';
+require_once 'api/config/database.php';
+
+try {
+    $db = new Database();
+    $pdo = $db->getConnection();
+    
+    if (!$pdo) {
+        throw new Exception('فشل في الاتصال بقاعدة البيانات');
+    }
+    
+    // بدء المعاملة
+    $pdo->beginTransaction();
+    
+    $results = [];
+    
+                    // إضافة فئات تجريبية أولاً
+                $categories = [
+                    ['قاعات الأفراح', 'قاعات احتفالات وأفراح', 'celebration', '#8e24aa'],
+                    ['التصوير', 'خدمات التصوير الاحترافي للمناسبات', 'camera_alt', '#ff9800'],
+                    ['الديكور', 'خدمات تزيين المناسبات', 'local_florist', '#4caf50'],
+                    ['الجاتوهات', 'جاتوهات وحلويات للمناسبات', 'cake', '#e91e63'],
+                    ['الموسيقى', 'خدمات الموسيقى والعزف', 'music_note', '#2196f3'],
+                    ['الفساتين', 'فساتين وأزياء المناسبات', 'checkroom', '#9c27b0']
+                ];
+                
+                $stmt = $pdo->prepare("INSERT IGNORE INTO categories (name, description, icon, color, is_active, created_at) VALUES (?, ?, ?, ?, 1, NOW())");
+                
+                foreach ($categories as $category) {
+                    $stmt->execute($category);
+                }
+                
+                $results['categories_added'] = count($categories);
+                
+                // إضافة مزودين تجريبيين
+                $providers = [
+                    ['أحمد محمد', 'ahmed@example.com', '0501234567', 'provider', 1, 4.5, 12],
+                    ['فاطمة علي', 'fatima@example.com', '0502345678', 'provider', 1, 4.8, 25],
+                    ['محمد حسن', 'mohammed@example.com', '0503456789', 'provider', 1, 4.2, 8],
+                    ['سارة أحمد', 'sara@example.com', '0504567890', 'provider', 0, 4.0, 5],
+                    ['علي محمود', 'ali@example.com', '0505678901', 'provider', 1, 4.7, 18],
+                    ['نورا سعيد', 'nora@example.com', '0506789012', 'provider', 1, 4.9, 30],
+                    ['خالد عبدالله', 'khalid@example.com', '0507890123', 'provider', 0, 3.8, 3],
+                    ['ليلى محمد', 'layla@example.com', '0508901234', 'provider', 1, 4.6, 15],
+                    ['عمر يوسف', 'omar@example.com', '0509012345', 'provider', 1, 4.3, 10],
+                    ['رنا أحمد', 'rana@example.com', '0500123456', 'provider', 1, 4.4, 22]
+                ];
+    
+    $stmt = $pdo->prepare("INSERT INTO users (name, email, phone, password, user_type, is_verified, is_active, rating, total_reviews, created_at) VALUES (?, ?, ?, ?, ?, ?, 1, ?, ?, NOW())");
+    
+    foreach ($providers as $provider) {
+        $password = password_hash('password123', PASSWORD_DEFAULT);
+        $stmt->execute([$provider[0], $provider[1], $provider[2], $password, $provider[3], $provider[4], $provider[5], $provider[6]]);
+    }
+    
+    $results['providers_added'] = count($providers);
+    
+    // إضافة فئات تجريبية
+    $categories = [
+        ['التصوير', 'خدمات التصوير الاحترافي للمناسبات', 'camera', '#FF6B6B'],
+        ['قاعات الأفراح', 'قاعات احتفالات وأفراح', 'celebration', '#4ECDC4'],
+        ['الموسيقى', 'خدمات الموسيقى والعزف', 'music', '#45B7D1'],
+        ['التزيين', 'خدمات تزيين المناسبات', 'decorations', '#96CEB4'],
+        ['الحلويات', 'حلويات ومخبوزات للمناسبات', 'cake', '#FFEAA7'],
+        ['الأزياء', 'أزياء وتأجير ملابس', 'fashion', '#DDA0DD']
+    ];
+    
+    $stmt = $pdo->prepare("INSERT IGNORE INTO categories (name, description, icon, color, is_active, created_at) VALUES (?, ?, ?, ?, 1, NOW())");
+    
+    foreach ($categories as $category) {
+        $stmt->execute($category);
+    }
+    
+    $results['categories_added'] = count($categories);
+    
+    // إضافة خدمات تجريبية
+    $services = [
+        // خدمات فاطمة علي (قاعات الأفراح)
+        [2, 1, 'قاعة أفراح فاخرة', 'قاعة أفراح فاخرة تتسع لـ 200 شخص', 2000.00, 4.8],
+        [2, 1, 'قاعة احتفالات صغيرة', 'قاعة احتفالات صغيرة للمناسبات العائلية', 1000.00, 4.7],
+        
+        // خدمات أحمد محمد (التصوير)
+        [1, 2, 'تصوير احترافي للمناسبات', 'تصوير احترافي عالي الجودة لجميع المناسبات', 500.00, 4.5],
+        [1, 2, 'تصوير فيديو للمناسبات', 'تصوير فيديو احترافي مع مونتاج', 800.00, 4.6],
+        
+        // خدمات سارة أحمد (الديكور)
+        [4, 3, 'تزيين قاعات الأفراح', 'تزيين احترافي لقاعات الأفراح', 300.00, 4.0],
+        [4, 3, 'تزيين مناسبات عائلية', 'تزيين بسيط للمناسبات العائلية', 150.00, 4.2],
+        
+        // خدمات علي محمود (الجاتوهات)
+        [5, 4, 'جاتوهات عيد الميلاد', 'جاتوهات احترافية لعيد الميلاد', 200.00, 4.7],
+        [5, 4, 'جاتوهات الأفراح', 'جاتوهات فاخرة لحفلات الأفراح', 300.00, 4.6],
+        
+        // خدمات محمد حسن (الموسيقى)
+        [3, 5, 'عزف موسيقي للمناسبات', 'عزف موسيقي احترافي لجميع المناسبات', 600.00, 4.2],
+        [3, 5, 'دجاجي وطرب', 'دجاجي وطرب تقليدي للمناسبات', 400.00, 4.1],
+        
+        // خدمات نورا سعيد (الفساتين)
+        [6, 6, 'تأجير فساتين العروس', 'تأجير فساتين عروس فاخرة', 500.00, 4.9],
+        [6, 6, 'تأجير بدلات الرجال', 'تأجير بدلات رسمية للرجال', 200.00, 4.8],
+        
+        // خدمات خالد عبدالله (التصوير)
+        [7, 2, 'تصوير بسيط للمناسبات', 'تصوير بسيط للمناسبات العائلية', 200.00, 3.8],
+        
+        // خدمات ليلى محمد (الموسيقى)
+        [8, 5, 'عزف البيانو', 'عزف البيانو للمناسبات الرومانسية', 700.00, 4.6],
+        [8, 5, 'غناء عربي', 'غناء عربي تقليدي للمناسبات', 500.00, 4.5],
+        
+        // خدمات عمر يوسف (الديكور)
+        [9, 3, 'تزيين حدائق', 'تزيين احترافي للحدائق والمناطق الخارجية', 400.00, 4.3],
+        
+        // خدمات رنا أحمد (الجاتوهات)
+        [10, 4, 'جاتوهات غربية', 'جاتوهات غربية متنوعة', 250.00, 4.4],
+        [10, 4, 'جاتوهات عربية', 'جاتوهات عربية تقليدية', 180.00, 4.3]
+    ];
+    
+    $stmt = $pdo->prepare("INSERT INTO services (provider_id, category_id, title, description, price, rating, is_active, created_at) VALUES (?, ?, ?, ?, ?, ?, 1, NOW())");
+    
+    foreach ($services as $service) {
+        $stmt->execute($service);
+    }
+    
+    $results['services_added'] = count($services);
+    
+    // إضافة مستخدمين عاديين
+    $users = [
+        ['مستخدم تجريبي 1', 'user1@example.com', '0501111111'],
+        ['مستخدم تجريبي 2', 'user2@example.com', '0502222222'],
+        ['مستخدم تجريبي 3', 'user3@example.com', '0503333333']
+    ];
+    
+    $stmt = $pdo->prepare("INSERT INTO users (name, email, phone, password, user_type, is_verified, is_active, rating, total_reviews, created_at) VALUES (?, ?, ?, ?, 'user', 1, 1, 0.0, 0, NOW())");
+    
+    foreach ($users as $user) {
+        $password = password_hash('password123', PASSWORD_DEFAULT);
+        $stmt->execute([$user[0], $user[1], $user[2], $password]);
+    }
+    
+    $results['users_added'] = count($users);
+    
+    // إضافة تقييمات تجريبية
+    $reviews = [
+        [11, 1, 5, 'تصوير ممتاز وجودة عالية'],
+        [11, 3, 4, 'قاعة جميلة وخدمة ممتازة'],
+        [12, 2, 5, 'فيديو احترافي جداً'],
+        [12, 4, 4, 'قاعة مناسبة للمناسبات العائلية'],
+        [13, 5, 4, 'عزف جميل وموسيقى هادئة'],
+        [13, 7, 5, 'تزيين رائع ومبدع']
+    ];
+    
+    $stmt = $pdo->prepare("INSERT INTO reviews (user_id, service_id, rating, comment, created_at) VALUES (?, ?, ?, ?, NOW())");
+    
+    foreach ($reviews as $review) {
+        $stmt->execute($review);
+    }
+    
+    $results['reviews_added'] = count($reviews);
+    
+    // تأكيد المعاملة
+    $pdo->commit();
+    
+    // جلب الإحصائيات النهائية
+    $stmt = $pdo->query("SELECT COUNT(*) as count FROM users WHERE user_type = 'provider' AND is_active = 1");
+    $totalProviders = $stmt->fetch(PDO::FETCH_ASSOC)['count'];
+    
+    $stmt = $pdo->query("SELECT COUNT(*) as count FROM users WHERE user_type = 'user' AND is_active = 1");
+    $totalUsers = $stmt->fetch(PDO::FETCH_ASSOC)['count'];
+    
+    $stmt = $pdo->query("SELECT COUNT(*) as count FROM services WHERE is_active = 1");
+    $totalServices = $stmt->fetch(PDO::FETCH_ASSOC)['count'];
+    
+    $stmt = $pdo->query("SELECT COUNT(*) as count FROM categories WHERE is_active = 1");
+    $totalCategories = $stmt->fetch(PDO::FETCH_ASSOC)['count'];
+    
+    echo json_encode([
+        'success' => true,
+        'message' => 'تم إضافة البيانات التجريبية بنجاح',
+        'data' => [
+            'results' => $results,
+            'statistics' => [
+                'total_providers' => (int)$totalProviders,
+                'total_users' => (int)$totalUsers,
+                'total_services' => (int)$totalServices,
+                'total_categories' => (int)$totalCategories
+            ]
+        ]
+    ], JSON_UNESCAPED_UNICODE);
+    
+} catch (Exception $e) {
+    // التراجع عن المعاملة في حالة الخطأ
+    if (isset($pdo)) {
+        $pdo->rollBack();
+    }
+    
+    http_response_code(500);
+    echo json_encode([
+        'success' => false,
+        'message' => 'خطأ في إضافة البيانات التجريبية: ' . $e->getMessage(),
+        'data' => []
+    ], JSON_UNESCAPED_UNICODE);
+}
 ?> 
